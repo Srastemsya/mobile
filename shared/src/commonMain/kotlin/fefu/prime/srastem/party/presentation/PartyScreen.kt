@@ -354,7 +354,14 @@ private fun PartyItemCard(
     ) {
         SrVoteCard(
             title = item.title,
-            metadata = listOf(item.category, item.price, item.location),
+            metadata = listOfNotNull(
+                item.category,
+                item.price,
+                item.location,
+                fefu.prime.srastem.events.domain.eventAttendanceSummary(
+                    item.confirmedCount, item.capacity, item.remainingCount,
+                ),
+            ),
             cover = {
                 if (item.imageKey.startsWith("content://") || item.imageKey.startsWith("file://") || item.imageKey.startsWith("http")) {
                     AsyncImage(item.imageKey, contentDescription = item.title, modifier = Modifier.fillMaxSize())

@@ -237,6 +237,7 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
             else -> "${price / 100} ₽"
         }
         val image = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.string("url")?.let(api::resolveMediaUrl)
+        val admission = card["admission"]?.takeUnless { it == JsonNull }?.jsonObject
         return PartyItem(
             id = ref?.string("id").orEmpty(),
             title = card.string("title").orEmpty(),
@@ -246,6 +247,9 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
             description = card.string("description").orEmpty().ifBlank { card.string("title").orEmpty() },
             imageKey = image.orEmpty(),
             pricePerPerson = price?.div(100) ?: Int.MAX_VALUE,
+            confirmedCount = admission?.get("confirmedCount")?.jsonPrimitive?.intOrNull,
+            capacity = admission?.get("capacity")?.jsonPrimitive?.intOrNull,
+            remainingCount = admission?.get("remainingCount")?.jsonPrimitive?.intOrNull,
         )
     }
 

@@ -25,4 +25,7 @@ data class MapMarker(
         MapMarkerType.Place -> MapMarkerIcon.Place
         MapMarkerType.Activity -> MapMarkerIcon.Activity
     },
+    val confirmedCount: Int? = null,
+    val capacity: Int? = null,
+    val remainingCount: Int? = null,
 )

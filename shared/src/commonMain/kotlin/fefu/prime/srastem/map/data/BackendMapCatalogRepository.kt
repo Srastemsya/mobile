@@ -2,6 +2,7 @@ package fefu.prime.srastem.map.data
 
 import fefu.prime.srastem.backend.BackendApi
 import fefu.prime.srastem.backend.string
+import fefu.prime.srastem.events.domain.eventAttendanceSummary
 import fefu.prime.srastem.map.domain.GeoPoint
 import fefu.prime.srastem.map.domain.MapCatalogRepository
 import fefu.prime.srastem.map.domain.MapMarker
@@ -62,13 +63,16 @@ class BackendMapCatalogRepository(private val api: BackendApi) : MapCatalogRepos
                         type = type,
                         title = card.string("title").orEmpty(),
                         subtitle = date,
-                        detail = if (seats == null) "Свободный вход" else "Записалось $confirmed · осталось $remaining места",
+                        detail = eventAttendanceSummary(confirmed, seats, remaining) ?: "Свободный вход",
                         price = when {
                             price == null -> "Цена неизвестна"
                             price == 0 -> "Бесплатно"
                             else -> "≈ ${price / 100} ₽"
                         },
                         icon = icon,
+                        confirmedCount = admission?.get("confirmedCount")?.jsonPrimitive?.intOrNull,
+                        capacity = seats,
+                        remainingCount = remaining,
                     )
                 }
                 cursor = page.string("nextCursor")
@@ -112,7 +116,7 @@ class BackendMapCatalogRepository(private val api: BackendApi) : MapCatalogRepos
                     type = type,
                     title = card.string("title").orEmpty(),
                     subtitle = card.string("startsAt")?.let(::displayDate) ?: location.string("address").orEmpty(),
-                    detail = if (seats == null) "Свободный вход" else "Записалось $confirmed · осталось $remaining места",
+                    detail = eventAttendanceSummary(confirmed, seats, remaining) ?: "Свободный вход",
                     price = when {
                         price == null -> "Цена неизвестна"
                         price == 0 -> "Бесплатно"
@@ -124,6 +128,9 @@ class BackendMapCatalogRepository(private val api: BackendApi) : MapCatalogRepos
                         type == MapMarkerType.Activity -> MapMarkerIcon.Activity
                         else -> MapMarkerIcon.Place
                     },
+                    confirmedCount = admission?.get("confirmedCount")?.jsonPrimitive?.intOrNull,
+                    capacity = seats,
+                    remainingCount = remaining,
                 )
             }
             cursor = page.string("nextCursor")

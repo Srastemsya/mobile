@@ -218,8 +218,9 @@ private fun EventDetailsPage(
             Text(
                 when {
                     event.capacity == null -> "Свободный вход · без ограничения мест"
-                    event.isFull -> "Все места заняты"
-                    else -> "${event.admission.title} · осталось ${event.remainingPlaces} мест"
+                    else -> fefu.prime.srastem.events.domain.eventAttendanceSummary(
+                        event.confirmedCount, event.capacity, event.remainingPlaces,
+                    ).orEmpty()
                 },
                 style = SrType.Caption, color = SrColors.Muted,
             )

@@ -23,6 +23,9 @@ data class PartyItem(
     val description: String,
     val imageKey: String,
     val pricePerPerson: Int,
+    val confirmedCount: Int? = null,
+    val capacity: Int? = null,
+    val remainingCount: Int? = null,
 )
 
 data class PartyParticipant(
