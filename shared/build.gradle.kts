@@ -50,6 +50,7 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.multiplatform.settings.no.arg)
             implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
             implementation(libs.coil.svg)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
