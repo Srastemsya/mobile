@@ -5,38 +5,41 @@ import fefu.prime.srastem.onboarding.data.SettingsOnboardingRepository
 import fefu.prime.srastem.onboarding.domain.CompleteOnboarding
 import fefu.prime.srastem.onboarding.domain.GetOnboardingCompleted
 import fefu.prime.srastem.onboarding.presentation.OnboardingViewModel
-import fefu.prime.srastem.registration.data.SettingsMockRegistrationRepository
+import fefu.prime.srastem.registration.data.BackendRegistrationRepository
 import fefu.prime.srastem.registration.domain.CompleteRegistration
 import fefu.prime.srastem.registration.domain.GetRegistrationCompleted
 import fefu.prime.srastem.registration.domain.RequestRegistrationCode
 import fefu.prime.srastem.registration.domain.VerifyRegistrationCode
 import fefu.prime.srastem.registration.presentation.RegistrationViewModel
-import fefu.prime.srastem.party.data.MockPartyRepository
+import fefu.prime.srastem.party.data.BackendPartyRepository
 import fefu.prime.srastem.party.presentation.PartyViewModel
 import fefu.prime.srastem.party.domain.PartyRepository
 import fefu.prime.srastem.profile.data.SettingsProfileRepository
 import fefu.prime.srastem.profile.presentation.ProfileViewModel
-import fefu.prime.srastem.events.data.MockEventRepository
+import fefu.prime.srastem.events.data.BackendEventRepository
 import fefu.prime.srastem.events.domain.EventRepository
 import fefu.prime.srastem.events.domain.EventUseCases
 import fefu.prime.srastem.events.presentation.EventViewModel
-import fefu.prime.srastem.home.data.MockHomeRepository
+import fefu.prime.srastem.home.data.BackendHomeRepository
+import fefu.prime.srastem.backend.BackendApi
 import fefu.prime.srastem.home.domain.GetHome
 import fefu.prime.srastem.home.presentation.HomeViewModel
-import fefu.prime.srastem.map.data.EventMapCatalogRepository
+import fefu.prime.srastem.map.data.BackendMapCatalogRepository
 import fefu.prime.srastem.map.domain.ObserveMapMarkers
 import fefu.prime.srastem.map.presentation.MapCatalogViewModel
 
 class AppContainer(
-    settings: Settings = Settings(),
+    private val settings: Settings = Settings(),
     private val configuredPartyRepository: PartyRepository? = null,
-    private val eventRepository: EventRepository = MockEventRepository(),
+    configuredEventRepository: EventRepository? = null,
 ) {
-    private val partyRepository: PartyRepository = configuredPartyRepository ?: MockPartyRepository(eventRepository)
+    private val api = BackendApi(settings)
+    private val eventRepository: EventRepository = configuredEventRepository ?: BackendEventRepository(api)
+    private val partyRepository: PartyRepository = configuredPartyRepository ?: BackendPartyRepository(api)
     private val onboardingRepository = SettingsOnboardingRepository(settings)
-    private val registrationRepository = SettingsMockRegistrationRepository(settings)
+    private val registrationRepository = BackendRegistrationRepository(api, settings)
     private val profileRepository = SettingsProfileRepository(settings, eventRepository)
-    private val homeRepository = MockHomeRepository()
+    private val homeRepository = BackendHomeRepository(api)
 
     fun createOnboardingViewModel() = OnboardingViewModel(
         getOnboardingCompleted = GetOnboardingCompleted(onboardingRepository),
@@ -58,5 +61,5 @@ class AppContainer(
 
     fun createHomeViewModel() = HomeViewModel(GetHome(homeRepository))
 
-    fun createMapCatalogViewModel() = MapCatalogViewModel(ObserveMapMarkers(EventMapCatalogRepository(eventRepository)))
+    fun createMapCatalogViewModel() = MapCatalogViewModel(ObserveMapMarkers(BackendMapCatalogRepository(api)), settings)
 }

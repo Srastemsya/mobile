@@ -32,6 +32,8 @@ internal fun MapSearchScreen(
     query: String,
     onQueryChange: (String) -> Unit,
     results: List<MapMarker>,
+    suggestions: List<String> = emptyList(),
+    recentSearches: List<String>,
     onBack: () -> Unit,
     onChooseQuery: (String) -> Unit,
     onSelectResult: (MapMarker) -> Unit,
@@ -63,14 +65,12 @@ internal fun MapSearchScreen(
 
         if (!isResults) {
             Text("Недавнее", style = SrType.Title, color = SrColors.Text)
-            SrNotificationRow(
-                "Сапы на Тобизина", "Событие · остров Русский", unread = false,
-                icon = SrIcon.Clock, onOpen = { onChooseQuery("Тобизина") },
-            )
-            SrNotificationRow(
-                "Бар «Миллионка»", "Заведение · Светланская, 13", unread = false,
-                icon = SrIcon.Location, onOpen = { onChooseQuery("Миллионка") },
-            )
+            recentSearches.forEach { recent ->
+                SrNotificationRow(
+                    recent, "Недавний запрос", unread = false,
+                    icon = SrIcon.Clock, onOpen = { onChooseQuery(recent) },
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text("Популярные запросы", style = SrType.Title, color = SrColors.Text)
             SrNotificationRow(
@@ -82,6 +82,12 @@ internal fun MapSearchScreen(
                 icon = SrIcon.Spark, onOpen = { onChooseQuery("Активный отдых") },
             )
         } else {
+            if (suggestions.isNotEmpty()) {
+                Text("Подсказки", style = SrType.Title, color = SrColors.Text)
+                suggestions.take(5).forEach { suggestion ->
+                    SrNotificationRow(suggestion, "Найдено в каталоге", unread = false, icon = SrIcon.Search, onOpen = { onChooseQuery(suggestion) })
+                }
+            }
             Text("Найдено ${results.size} ${resultsWord(results.size)}", style = SrType.Caption, color = SrColors.Muted)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 results.forEach { marker ->

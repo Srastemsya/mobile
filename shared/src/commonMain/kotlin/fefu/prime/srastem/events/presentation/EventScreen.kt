@@ -160,7 +160,7 @@ private fun EventPosterCard(event: SrEvent, onClick: () -> Unit) {
         )
         if (event.capacity != null) {
             Text(
-                "Записалось ${event.participants.size} · осталось ${event.remainingPlaces}",
+                "Записалось ${event.confirmedCount} · осталось ${event.remainingPlaces}",
                 Modifier.padding(top = 4.dp),
                 style = SrType.Caption,
                 color = SrColors.Muted
@@ -188,7 +188,7 @@ private fun EventDetailsPage(
     onOpenMap: () -> Unit
 ) {
     val isOrganizer = event.organizerId == state.currentUserId
-    val isParticipant = event.participants.any { it.id == state.currentUserId }
+    val isParticipant = event.isAttending || event.participants.any { it.id == state.currentUserId }
     Column(Modifier.fillMaxSize()) {
         EventSubHeader("О событии", vm::back)
         Column(
@@ -235,13 +235,15 @@ private fun EventDetailsPage(
                 Modifier.fillMaxWidth()
             )
 
-            isParticipant -> SrButton(
+            isParticipant && event.canCancelRegistration -> SrButton(
                 "Отменить запись",
                 vm::leaveSelectedEvent,
                 Modifier.fillMaxWidth(),
                 style = SrButtonStyle.Secondary,
                 enabled = !state.isBusy
             )
+
+            isParticipant -> Text("Вы записаны", color = SrColors.Primary)
 
             event.admission == EventAdmission.FREE -> SrButton(
                 "Показать на карте",
@@ -253,7 +255,7 @@ private fun EventDetailsPage(
                 if (event.admission == EventAdmission.BOOKING && event.priceRub > 0) "Записаться · ${event.priceRub} ₽" else "Записаться",
                 vm::joinSelectedEvent,
                 Modifier.fillMaxWidth(),
-                enabled = !state.isBusy && !event.isFull,
+                enabled = !state.isBusy && event.canRegister && !event.isFull,
                 loading = state.isBusy,
             )
         }
@@ -282,7 +284,7 @@ private fun EventJoinedPage(event: SrEvent?, vm: EventViewModel) {
                 Text(event.startsAt, style = SrType.Body, color = SrColors.Muted)
                 Text(event.address, style = SrType.Body, color = SrColors.Muted)
                 Text(
-                    "Записались ${event.participants.size} · осталось ${event.remainingPlaces ?: "много"} мест",
+                    "Записались ${event.confirmedCount} · осталось ${event.remainingPlaces ?: "много"} мест",
                     style = SrType.Caption,
                     color = SrColors.Muted
                 )
@@ -351,7 +353,7 @@ private fun CreateEventPage(state: EventUiState, vm: EventViewModel) {
                 "Название",
                 placeholder = "Например, прогулка у моря"
             )
-            CategoryPicker(state.draft, vm)
+            CategoryPicker(state.draft, state.categories, vm)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SrField(
                     state.draft.startsAt.substringBefore(" · "),
@@ -426,18 +428,41 @@ private fun CreateEventPage(state: EventUiState, vm: EventViewModel) {
 }
 
 @Composable
-private fun CategoryPicker(draft: EventDraft, vm: EventViewModel) {
+private fun CategoryPicker(draft: EventDraft, categories: List<fefu.prime.srastem.events.domain.EventCatalogCategory>, vm: EventViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Категория", style = SrType.Label, color = SrColors.Text)
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            EventCategory.entries.forEach { category ->
+            val options = categories.ifEmpty {
+                EventCategory.entries.map { category ->
+                    fefu.prime.srastem.events.domain.EventCatalogCategory(
+                        id = when (category) {
+                            EventCategory.WALK, EventCategory.ACTIVE -> "outdoors"
+                            EventCategory.GAMES, EventCategory.FOOD, EventCategory.OTHER -> "culture"
+                        },
+                        label = category.title,
+                    )
+                }.distinctBy { it.id }
+            }
+            options.forEach { category ->
                 SrChip(
-                    category.title,
-                    selected = draft.category == category,
-                    onClick = { vm.updateDraft { it.copy(category = category) } })
+                    category.label,
+                    selected = draft.categoryId == category.id,
+                    onClick = {
+                        vm.updateDraft {
+                            it.copy(
+                                categoryId = category.id,
+                                category = when (category.id) {
+                                    "outdoors" -> EventCategory.ACTIVE
+                                    "food" -> EventCategory.FOOD
+                                    "culture" -> EventCategory.OTHER
+                                    else -> EventCategory.OTHER
+                                },
+                            )
+                        }
+                    })
             }
         }
     }
@@ -477,7 +502,7 @@ private fun OrganizerPage(event: SrEvent, state: EventUiState, vm: EventViewMode
             EventHero(event, Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)))
             Text(event.title, style = SrType.Heading, color = SrColors.Text)
             Text(
-                "${event.participants.size} из ${event.capacity ?: "∞"} участников",
+                "${event.confirmedCount} из ${event.capacity ?: "∞"} участников",
                 style = SrType.Title,
                 color = SrColors.Text
             )
@@ -526,13 +551,13 @@ private fun OrganizerPage(event: SrEvent, state: EventUiState, vm: EventViewMode
             DisabledChatRow()
         }
         Spacer(Modifier.height(12.dp))
-        SrButton(
-            "Удалить событие",
-            vm::deleteSelectedEvent,
-            Modifier.fillMaxWidth(),
-            style = SrButtonStyle.Destructive,
-            enabled = !state.isBusy
-        )
+        if (event.canDelete) SrButton(
+                "Удалить событие",
+                vm::deleteSelectedEvent,
+                Modifier.fillMaxWidth(),
+                style = SrButtonStyle.Destructive,
+                enabled = !state.isBusy
+            )
     }
 }
 
@@ -543,7 +568,7 @@ private fun ParticipantSummary(event: SrEvent, vm: EventViewModel) {
             .border(1.dp, SrColors.Border, RoundedCornerShape(22.dp)).padding(13.dp)
     ) {
         Text(
-            "Участники · ${event.participants.size} из ${event.capacity ?: "∞"}",
+            "Участники · ${event.confirmedCount} из ${event.capacity ?: "∞"}",
             style = SrType.Title,
             color = SrColors.Text
         )

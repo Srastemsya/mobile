@@ -6,7 +6,7 @@ enum class EventCategory(val title: String) {
 
 enum class EventAdmission(val title: String) { FREE("Свободный вход"), BOOKING("По записи") }
 
-data class EventParticipant(val id: String, val name: String)
+data class EventParticipant(val id: String, val name: String, val registrationId: String? = null)
 
 data class SrEvent(
     val id: String,
@@ -25,9 +25,14 @@ data class SrEvent(
     val longitude: Double = 131.8855,
     val participants: List<EventParticipant> = emptyList(),
     val isPast: Boolean = false,
+    val confirmedCount: Int = participants.size,
+    val isAttending: Boolean = false,
+    val canRegister: Boolean = admission == EventAdmission.BOOKING,
+    val canCancelRegistration: Boolean = true,
+    val canDelete: Boolean = true,
 ) {
-    val isFull: Boolean get() = capacity != null && participants.size >= capacity
-    val remainingPlaces: Int? get() = capacity?.let { (it - participants.size).coerceAtLeast(0) }
+    val isFull: Boolean get() = capacity != null && confirmedCount >= capacity
+    val remainingPlaces: Int? get() = capacity?.let { (it - confirmedCount).coerceAtLeast(0) }
 }
 
 data class EventDraft(
@@ -36,6 +41,7 @@ data class EventDraft(
     val longitude: Double = 131.8855,
     val title: String = "",
     val category: EventCategory = EventCategory.WALK,
+    val categoryId: String = "outdoors",
     val startsAt: String = "15.11.2026 · 16:00",
     val address: String = "Спортивная набережная",
     val description: String = "",
@@ -43,4 +49,6 @@ data class EventDraft(
     val capacity: String = "8",
     val priceRub: String = "0",
 )
+
+data class EventCatalogCategory(val id: String, val label: String)
 

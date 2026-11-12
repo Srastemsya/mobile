@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fefu.prime.srastem.events.domain.EventDraft
 import fefu.prime.srastem.events.domain.EventAdmission
+import fefu.prime.srastem.events.domain.EventCatalogCategory
 import fefu.prime.srastem.events.domain.EventParticipant
 import fefu.prime.srastem.events.domain.EventUseCases
 import fefu.prime.srastem.events.domain.SrEvent
@@ -21,6 +22,7 @@ enum class EventPage { LIST, DETAIL, CREATE_LOCATION, CREATE_FORM, CREATED, JOIN
 data class EventUiState(
     val page: EventPage = EventPage.LIST,
     val events: List<SrEvent> = emptyList(),
+    val categories: List<EventCatalogCategory> = emptyList(),
     val selectedEventId: String? = null,
     val currentUserId: String = "",
     val draft: EventDraft = EventDraft(),
@@ -42,6 +44,29 @@ class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
 
     fun openEvent(id: String) = _state.update {
         it.copy(page = EventPage.DETAIL, selectedEventId = id, error = null)
+    }.also {
+        viewModelScope.launch {
+            try {
+                useCases.getEvent(id)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                showError(error)
+            }
+        }
+    }
+
+    fun refreshEvents() {
+        viewModelScope.launch {
+            try {
+                useCases.refreshEvents()
+                _state.update { it.copy(categories = useCases.getEventCategories()) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                showError(error)
+            }
+        }
     }
 
     fun openCreate() = _state.update {

@@ -42,6 +42,9 @@ data class PartyRoom(
     val items: List<PartyItem>,
     val votes: Map<String, Map<String, PartyVote>>,
     val matchedItem: PartyItem? = null,
+    val version: Long = 0,
+    val roundId: String? = null,
+    val finishedCount: Int = 0,
 )
 
 data class PartySession(

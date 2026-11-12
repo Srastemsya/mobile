@@ -205,9 +205,13 @@ fun MapScreen(
     onOpenEvent: (String) -> Unit = {},
 ) {
     val catalogState by (catalogViewModel?.state ?: remember { kotlinx.coroutines.flow.MutableStateFlow(MapCatalogUiState()) }).collectAsState()
-    val allMarkers = remember(catalogState.eventMarkers) {
-        val eventIds = catalogState.eventMarkers.mapTo(mutableSetOf()) { it.id }
-        previewMarkers.filterNot { it.id in eventIds } + catalogState.eventMarkers
+    LaunchedEffect(catalogViewModel) { catalogViewModel?.refresh() }
+    val baseMarkers = remember(catalogViewModel, catalogState.eventMarkers) {
+        if (catalogViewModel == null) previewMarkers else catalogState.eventMarkers
+    }
+    var pinnedSearchMarker by remember { mutableStateOf<MapMarker?>(null) }
+    val allMarkers = remember(baseMarkers, catalogState.searchResults, pinnedSearchMarker) {
+        (baseMarkers + catalogState.searchResults + listOfNotNull(pinnedSearchMarker)).distinctBy { it.id }
     }
     OSMMapRuntimeSetup.configured
     val mapState = rememberMapState(
@@ -252,8 +256,9 @@ fun MapScreen(
         }
     }
     val selectedMarker = visibleMarkers.firstOrNull { it.id == selectedMarkerId }
-    val searchResults = remember(searchText, allMarkers) {
+    val searchResults = remember(searchText, allMarkers, catalogState.searchResults, catalogViewModel) {
         if (searchText.isBlank()) emptyList()
+        else if (catalogViewModel != null) catalogState.searchResults
         else allMarkers.filter { marker ->
             marker.title.contains(searchText, ignoreCase = true) ||
                     marker.subtitle.contains(searchText, ignoreCase = true) ||
@@ -320,9 +325,13 @@ fun MapScreen(
     fun dismissSearch() {
         searchOpen = false
         searchText = ""
+        catalogViewModel?.search("")
     }
 
     fun showSearchResult(marker: MapMarker) {
+        catalogViewModel?.recordSearch(searchText)
+        pinnedSearchMarker = marker
+        appliedFilters = null
         showMarker(
             marker,
             ::dismissSearch,
@@ -337,12 +346,23 @@ fun MapScreen(
         if (searchOpen) {
             MapSearchScreen(
                 query = searchText,
-                onQueryChange = { searchText = it },
-                results = searchResults,
-                onBack = {
-                    if (searchText.isNotEmpty()) searchText = "" else searchOpen = false
+                onQueryChange = {
+                    searchText = it
+                    catalogViewModel?.search(it)
                 },
-                onChooseQuery = { searchText = it },
+                results = searchResults,
+                suggestions = catalogState.searchSuggestions,
+                recentSearches = catalogState.recentSearches,
+                onBack = {
+                    if (searchText.isNotEmpty()) {
+                        searchText = ""
+                        catalogViewModel?.search("")
+                    } else searchOpen = false
+                },
+                onChooseQuery = {
+                    searchText = it
+                    catalogViewModel?.search(it)
+                },
                 onSelectResult = ::showSearchResult,
                 onShowOnMap = {
                     searchResults.firstOrNull()?.let(::showSearchResult)

@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -53,6 +54,15 @@ fun NavigationMain(
 ) {
     val onboardingState by onboardingViewModel.uiState.collectAsState()
     val registrationState by registrationViewModel.uiState.collectAsState()
+
+    LaunchedEffect(registrationState.isLoading, registrationState.isVisible) {
+        if (!registrationState.isLoading && !registrationState.isVisible) {
+            // Protected catalog routes become available only after the identity flow completes.
+            homeViewModel.refresh()
+            eventViewModel.refreshEvents()
+            mapCatalogViewModel.refresh()
+        }
+    }
 
     SrTheme {
         when {
@@ -98,6 +108,12 @@ private fun MainNavigation(viewModel: MainViewModel, partyViewModel: PartyViewMo
     val profileState by profileViewModel.state.collectAsState()
     val eventState by eventViewModel.state.collectAsState()
     val eventListUnderGlass = currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
+
+    LaunchedEffect(currentDestination, eventState.page) {
+        if (currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST) {
+            eventViewModel.refreshEvents()
+        }
+    }
 
     SrGlassHost(
         background = {

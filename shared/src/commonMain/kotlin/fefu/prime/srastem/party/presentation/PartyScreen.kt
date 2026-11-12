@@ -380,7 +380,7 @@ private fun PartyItemCard(
 @Composable
 private fun WaitingPage(state: PartyUiState, vm: PartyViewModel) {
     val room = state.session?.room ?: return
-    val complete = room.participants.count { it.completedFeed }
+    val complete = room.finishedCount.takeIf { it > 0 } ?: room.participants.count { it.completedFeed }
     Text("Ваш голос принят", style = SrType.Display, color = SrColors.Text)
     Text("Если большинство выберет один вариант, покажем его всем. Иначе обновим подборку.", style = SrType.Body, color = SrColors.Muted)
     Column(Modifier.clip(SrShapes.Panel).background(SrColors.Solid).border(1.dp, SrColors.Border, SrShapes.Panel).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
