@@ -1,12 +1,17 @@
 package ru.srastemsya.uikit
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.painterResource
+import ru.srastemsya.uikit.resources.Res
+import ru.srastemsya.uikit.resources.home_bar_cover
+import ru.srastemsya.uikit.resources.home_russky_cover
 
 enum class SrIcon(internal val file: String, internal val naturalSize: Int) {
     Home("f8380_imghome", 22), Map("f8380_imgpin", 22), Feed("f8380_img", 22),
@@ -40,6 +45,27 @@ enum class SrIllustration(internal val file: String) {
 @Composable
 fun SrArtwork(artwork: SrIllustration, modifier: Modifier = Modifier, description: String? = null) =
     FigmaSvg(artwork.file, modifier, description, scale = ContentScale.Crop)
+
+enum class SrHomeVector(internal val file: String) {
+    Brand("home_logo"), Bay("home_bay"), Bell("home_bell"), Spark("home_spark"),
+    SwipeArt("home_swipe_art"), SwipeSpark("home_swipe_spark"), Compass("home_compass"),
+    Next("home_next"), Chevron("home_chevron"), Heart("home_heart")
+}
+
+enum class SrHomeCover { SvetlanskayaBars, RusskyWeekend }
+
+@Composable
+fun SrHomeVectorImage(vector: SrHomeVector, modifier: Modifier = Modifier, description: String? = null) =
+    FigmaSvg(vector.file, modifier, description)
+
+@Composable
+fun SrHomeCoverImage(cover: SrHomeCover, modifier: Modifier = Modifier, description: String? = null) {
+    val painter = when (cover) {
+        SrHomeCover.SvetlanskayaBars -> painterResource(Res.drawable.home_bar_cover)
+        SrHomeCover.RusskyWeekend -> painterResource(Res.drawable.home_russky_cover)
+    }
+    Image(painter, description, modifier, contentScale = ContentScale.Crop)
+}
 
 @Composable
 internal expect fun FigmaSvg(

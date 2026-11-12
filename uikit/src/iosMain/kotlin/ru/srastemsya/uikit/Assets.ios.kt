@@ -25,6 +25,16 @@ internal actual fun FigmaSvg(
     file: String, modifier: Modifier, description: String?, tint: Color?, scale: ContentScale
 ) {
     val asset = when (file) {
+        "home_logo" -> Res.drawable.home_logo
+        "home_bay" -> Res.drawable.home_bay
+        "home_bell" -> Res.drawable.home_bell
+        "home_spark" -> Res.drawable.home_spark
+        "home_swipe_art" -> Res.drawable.home_swipe_art
+        "home_swipe_spark" -> Res.drawable.home_swipe_spark
+        "home_compass" -> Res.drawable.home_compass
+        "home_next" -> Res.drawable.home_next
+        "home_chevron" -> Res.drawable.home_chevron
+        "home_heart" -> Res.drawable.home_heart
         "f8380_img" -> Res.drawable.f8380_img
         "f8380_imgcalendar" -> Res.drawable.f8380_imgcalendar
         "f8380_imghome" -> Res.drawable.f8380_imghome

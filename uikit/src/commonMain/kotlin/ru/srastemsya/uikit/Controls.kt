@@ -109,7 +109,11 @@ fun SrTabBar(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)
             ) {
-                val variant = if (tab == SrTab.Feed && active) "f8420_img" else tab.icon.file
+                val variant = when {
+                    tab == SrTab.Home -> "home_compass"
+                    tab == SrTab.Feed && active -> "f8420_img"
+                    else -> tab.icon.file
+                }
                 FigmaSvg(variant, Modifier.size(22.dp), tint = fg)
                 Text(tab.title, style = SrType.Caption, color = fg, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
