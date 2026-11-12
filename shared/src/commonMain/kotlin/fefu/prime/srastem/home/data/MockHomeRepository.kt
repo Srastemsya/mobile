@@ -1,0 +1,17 @@
+package fefu.prime.srastem.home.data
+
+import fefu.prime.srastem.home.domain.HomeCollection
+import fefu.prime.srastem.home.domain.HomeContent
+import fefu.prime.srastem.home.domain.HomeRepository
+
+/** Local implementation of GET /home. Replace this binding with the API repository when the BE is available. */
+class MockHomeRepository : HomeRepository {
+    override suspend fun getHome() = HomeContent(
+        city = "Владивосток",
+        collections = listOf(
+            HomeCollection("waterfront", "У моря", "Набережные и виды", "Прогулки"),
+            HomeCollection("evening", "Вечером", "Идеи на сегодня", "События"),
+            HomeCollection("active", "Пора двигаться", "Активный отдых", "Активности"),
+        ),
+    )
+}
