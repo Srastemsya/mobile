@@ -16,7 +16,15 @@ esac
 : "${COMPAT_API_BASE:?Укажите базовый URL API}"
 : "${COMPAT_API_KEY:?Загрузите ключ API в окружение}"
 : "${COMPAT_API_MODEL:?Укажите точный ID модели}"
-OPENCODE_CONFIG_CONTENT="$(python3 - <<'PY'
+python_bin="${PYTHON_BIN:-}"
+if [ -z "$python_bin" ]; then
+  if [ -x /usr/bin/python3 ]; then
+    python_bin=/usr/bin/python3
+  else
+    python_bin="$(command -v python3)" || { echo 'Python 3 не найден.' >&2; exit 1; }
+  fi
+fi
+OPENCODE_CONFIG_CONTENT="$("$python_bin" - <<'PY'
 import json
 import os
 
