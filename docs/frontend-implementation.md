@@ -5,29 +5,31 @@
 ## Слои приложения
 
 - `shared/src/commonMain/.../<feature>/domain` содержит модели, интерфейсы репозиториев и use case.
-- `.../<feature>/data` содержит текущие локальные реализации и проекции между feature-моделями.
+- `.../<feature>/data` содержит backend-клиенты, локальные реализации и проекции между feature-моделями.
 - `.../<feature>/presentation` содержит Compose-экраны, ViewModel и `StateFlow` UI state.
 - `shared/src/androidMain` и `shared/src/iosMain` содержат только платформенный выбор изображений, настройки MapLibre и Swift/UIKit host.
-- `di/AppContainer` собирает реализации репозиториев и ViewModel. Когда появится API стенд, замена локальных репозиториев на HTTP-реализации выполняется через этот composition root.
+- `di/AppContainer` собирает backend-репозитории и ViewModel через общий `BackendApi`.
 
-## Локальные реализации для первого прогона
+## Реализации первого backend-среза
 
 | Сценарий | Реализация | Контракт |
 |---|---|---|
-| Открытия | `home/data/MockHomeRepository` | `GET /home` |
-| Вход и регистрация | `registration/data/SettingsMockRegistrationRepository` | challenge, verify, профиль; локальный dev-код `0427` |
-| Афиша и публикация | `events/data/MockEventRepository` | list/detail/create/register/cancel/organizer |
-| Лента и комнаты | `party/data/MockPartyRepository` + `MockPartyBackend` | cursor-подобная выдача, комната, приглашение, голоса и результат |
-| События карты | `map/data/EventMapCatalogRepository` | карта проецирует те же ID и координаты, что и афиша |
-| Профиль | `profile/data/SettingsProfileRepository` | локальные профиль, фото, сохранённое и мои события |
+| Открытия | `home/data/BackendHomeRepository` | `GET /v1/home` |
+| Вход и регистрация | `registration/data/BackendRegistrationRepository` | challenge, OTP verify, `GET /me`, `PUT /me/registration`, refresh |
+| Афиша и публикация | `events/data/BackendEventRepository` | list/detail/create/register, organizer roster and participant removal |
+| Лента и комнаты | `party/data/BackendPartyRepository` | paged candidate feed, room/invite/join, votes, completion and long polling |
+| Карта | `map/data/BackendMapCatalogRepository` | `GET /v1/catalog/map` for published events, places and activities |
+| Профиль | `profile/data/SettingsProfileRepository` | local profile editing, photos, saved items and event lists |
 
-Mocks остаются в памяти процесса либо в локальных настройках и предназначены для демонстрации UI. Они не заменяют проверку настоящих HTTP-статусов, авторизации, идемпотентности, сохранения комнаты между перезапусками и long polling. До подключения сервера UI не должен показывать dev OTP; `0427` используется только локальным mock-репозиторием.
+`di/AppContainer` binds the backend repositories by default. `BackendApi` adds bearer authentication, refresh on 401, JSON handling and stable idempotency keys for retried POST operations. The current development API origin is selected per platform: Android Emulator `http://10.0.2.2:8080`, iOS Simulator `http://127.0.0.1:8080`. Debug Android allows local HTTP; release Android does not. A production HTTPS origin still needs build configuration.
+
+Mocks remain available as explicit implementations, but they are no longer the default app binding. Profile editing and profile lists remain local because they are outside the backend's Discovery v1 runtime. The API also does not currently provide self-cancel registration, event deletion, real cover uploads, chat, payments or reviews; the UI must not report these operations as server successes. See [backend integration notes](backend-integration.md).
 
 ## События и единая идентичность
 
-При создании события сохраняется выбранная точка карты. `EventMapCatalogRepository` превращает поток `EventRepository` в маркеры карты с тем же `id`; режим свайпов событий также читает тот же `EventRepository`. Результат голосования и маркер карты открывают детали по этому ID. Карточки ленты принимают изображение через слот UI Kit и показывают обложку события, если она выбрана.
+При публикации события сервер возвращает единый ID; афиша, карта и выдача свайпов читают объект с этим ID. Карта перечитывает каталог при открытии. Карточки ленты показывают серверную обложку, если у карточки есть доступный URL.
 
-`OPEN` отображается как свободный вход без вместимости. `REGISTRATION` имеет вместимость и атомарное ограничение места в mock. Платная запись, чат, платежи, уведомления и подбор по настроению остаются за пределами первого клиентского среза согласно README handoff.
+`OPEN` отображается как свободный вход без вместимости. `REGISTRATION` имеет вместимость и атомарную серверную запись. Платная запись, чат, платежи, уведомления и подбор по настроению остаются за пределами первого клиентского среза согласно README handoff.
 
 ## Сборка UI Kit
 
