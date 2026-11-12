@@ -12,3 +12,5 @@ actual fun getPlatform(): Platform = AndroidPlatform()
 actual fun currentDateParts(): List<Int> = Calendar.getInstance().let {
     listOf(it.get(Calendar.YEAR), it.get(Calendar.MONTH) + 1, it.get(Calendar.DAY_OF_MONTH))
 }
+
+actual fun backendBaseUrl(): String = "http://10.0.2.2:8080"

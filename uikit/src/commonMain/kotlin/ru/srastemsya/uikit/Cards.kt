@@ -344,7 +344,7 @@ fun SrReviewEditor(
 fun SrAuthCode(
     code: String, onCodeChange: (String) -> Unit, onResend: () -> Unit, modifier: Modifier = Modifier,
     length: Int = 6, canResend: Boolean = true, enabled: Boolean = true, errorMessage: String? = null,
-    instruction: String = "Введите код из сообщения"
+    instruction: String = "Введите код из сообщения", resendLabel: String = "Отправить код ещё раз"
 ) {
     require(length in 4..8)
     var focused by remember { mutableStateOf(false) }
@@ -378,7 +378,7 @@ fun SrAuthCode(
             }
         )
         errorMessage?.let { Text(it, style = SrType.Caption, color = SrColors.Error) }
-        SrButton("Отправить код ещё раз", onResend, style = SrButtonStyle.Secondary, enabled = canResend && enabled)
+        SrButton(resendLabel, onResend, style = SrButtonStyle.Secondary, enabled = canResend && enabled)
     }
 }
 

@@ -7,3 +7,5 @@ interface Platform {
 expect fun getPlatform(): Platform
 
 expect fun currentDateParts(): List<Int>
+
+expect fun backendBaseUrl(): String

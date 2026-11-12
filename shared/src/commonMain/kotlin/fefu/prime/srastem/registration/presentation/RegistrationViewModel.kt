@@ -2,6 +2,7 @@ package fefu.prime.srastem.registration.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fefu.prime.srastem.backend.BackendException
 import fefu.prime.srastem.currentDateParts
 import fefu.prime.srastem.registration.domain.CompleteRegistration
 import fefu.prime.srastem.registration.domain.GetRegistrationCompleted
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 enum class RegistrationStep { METHOD, CONTACT, CODE, PROFILE }
 enum class RegistrationField { CONTACT, CODE, NAME, BIRTH_DATE }
@@ -30,6 +33,7 @@ data class RegistrationUiState(
     val error: String? = null,
     val errorField: RegistrationField? = null,
     val isBusy: Boolean = false,
+    val resendSecondsRemaining: Int = 0,
 )
 
 class RegistrationViewModel(
@@ -40,6 +44,7 @@ class RegistrationViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RegistrationUiState())
     val uiState: StateFlow<RegistrationUiState> = _uiState.asStateFlow()
+    private var resendTimer: Job? = null
 
     init {
         viewModelScope.launch {
@@ -76,6 +81,7 @@ class RegistrationViewModel(
     fun onRequestCode() {
         val state = _uiState.value
         val method = state.method ?: return
+        if (state.step == RegistrationStep.CODE && state.resendSecondsRemaining > 0) return
         val contact = state.contact.trim()
         val valid = when (method) {
             RegistrationMethod.PHONE -> phoneSubscriberDigits(contact).length == 10
@@ -92,11 +98,38 @@ class RegistrationViewModel(
             _uiState.value = state.copy(isBusy = true, error = null)
             try {
                 requestRegistrationCode(contact, method)
-                _uiState.value = _uiState.value.copy(step = RegistrationStep.CODE, isBusy = false, code = "")
+                _uiState.value = _uiState.value.copy(
+                    step = RegistrationStep.CODE,
+                    isBusy = false,
+                    code = "",
+                    resendSecondsRemaining = RESEND_DELAY_SECONDS,
+                )
+                startResendTimer()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _uiState.value = _uiState.value.copy(isBusy = false, error = error.message ?: "Не удалось отправить код", errorField = RegistrationField.CONTACT)
+                val message = when {
+                    method == RegistrationMethod.PHONE && error is BackendException &&
+                            error.status == 422 && error.code == "VALIDATION_ERROR" ->
+                        "В тестовом backend SMS для этого номера не настроены. Выберите Email: person1@example.test или person2@example.test, код 0427."
+                    method == RegistrationMethod.EMAIL && error is BackendException &&
+                            error.status == 422 && error.code == "VALIDATION_ERROR" ->
+                        "Для теста используйте person1@example.test или person2@example.test. Код: 0427."
+                    else -> error.message ?: "Не удалось отправить код"
+                }
+                _uiState.value = _uiState.value.copy(isBusy = false, error = message, errorField = RegistrationField.CONTACT)
+            }
+        }
+    }
+
+    private fun startResendTimer() {
+        resendTimer?.cancel()
+        resendTimer = viewModelScope.launch {
+            while (_uiState.value.resendSecondsRemaining > 0) {
+                delay(1_000)
+                _uiState.update { current ->
+                    current.copy(resendSecondsRemaining = (current.resendSecondsRemaining - 1).coerceAtLeast(0))
+                }
             }
         }
     }
@@ -123,9 +156,11 @@ class RegistrationViewModel(
             _uiState.value = state.copy(isBusy = true, error = null)
             try {
                 val valid = verifyRegistrationCode(state.contact.trim(), method, state.code)
+                val alreadyComplete = valid && getRegistrationCompleted()
                 _uiState.value = _uiState.value.copy(
                     isBusy = false,
-                    step = if (valid) RegistrationStep.PROFILE else RegistrationStep.CODE,
+                    isVisible = !alreadyComplete,
+                    step = if (valid && !alreadyComplete) RegistrationStep.PROFILE else RegistrationStep.CODE,
                     error = if (valid) null else "Код неверен или срок его действия истёк",
                     errorField = if (valid) null else RegistrationField.CODE,
                 )
@@ -250,5 +285,9 @@ class RegistrationViewModel(
         val (year, month, day) = date
         val age = currentYear - year - if (currentMonth < month || (currentMonth == month && currentDay < day)) 1 else 0
         return age >= 18 && (year < currentYear || month < currentMonth || (month == currentMonth && day <= currentDay))
+    }
+
+    private companion object {
+        const val RESEND_DELAY_SECONDS = 60
     }
 }

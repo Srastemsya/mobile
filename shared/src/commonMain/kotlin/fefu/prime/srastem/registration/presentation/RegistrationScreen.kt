@@ -98,7 +98,10 @@ fun RegistrationScreen(
                         onResend = onRequestCode,
                         length = 4,
                         enabled = !state.isBusy,
-                        canResend = !state.isBusy,
+                        canResend = !state.isBusy && state.resendSecondsRemaining == 0,
+                        resendLabel = if (state.resendSecondsRemaining > 0) {
+                            "Отправить код ещё раз через ${state.resendSecondsRemaining / 60}:${(state.resendSecondsRemaining % 60).toString().padStart(2, '0')}"
+                        } else "Отправить код ещё раз",
                         errorMessage = state.error.takeIf { state.errorField == RegistrationField.CODE },
                         instruction = "Код отправлен на ${state.contact}",
                     )
