@@ -4,7 +4,6 @@ package ru.srastemsya.uikit
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -18,11 +17,11 @@ import platform.Foundation.NSSelectorFromString
 import platform.UIKit.*
 
 @Composable
-internal actual fun SrNativeTabBar(selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier): Boolean {
+internal actual fun SrNativeTabBar(selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier, tabs: List<SrTab>): Boolean {
     if (!hasNativeGlass()) return false
     UIKitView(
-        factory = { NativeTabBar() },
-        modifier = modifier.widthIn(max = 358.dp).fillMaxWidth().height(72.dp),
+        factory = { NativeTabBar(tabs) },
+        modifier = modifier.fillMaxWidth().height(72.dp),
         update = { it.update(selected, onSelect) },
         properties = UIKitInteropProperties(isNativeAccessibilityEnabled = true, placedAsOverlay = true)
     )
@@ -48,16 +47,16 @@ internal fun nativeGlass(cornerRadius: Double, interactive: Boolean = false): UI
 private val accent = UIColor(red = .239, green = .282, blue = .980, alpha = 1.0)
 private val muted = UIColor(red = .376, green = .380, blue = .482, alpha = 1.0)
 
-private class NativeTabBar : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
+private class NativeTabBar(private val tabItems: List<SrTab>) : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
     private val glass = nativeGlass(cornerRadius = 26.0)
-    private val tabs = SrTab.entries.map { tab ->
+    private val buttons = tabItems.map { tab ->
         NativeControl(tab.title, tab.symbol).apply { glass.contentView.addSubview(this) }
     }
 
     init { addSubview(glass) }
 
     fun update(selected: SrTab, onSelect: (SrTab) -> Unit) {
-        SrTab.entries.zip(tabs).forEach { (tab, button) ->
+        tabItems.zip(buttons).forEach { (tab, button) ->
             button.action = { onSelect(tab) }
             button.setTabSelected(selected == tab)
         }
@@ -68,9 +67,9 @@ private class NativeTabBar : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
         glass.setFrame(bounds)
         val width = bounds.useContents { size.width }
         val height = bounds.useContents { size.height }
-        val itemWidth = ((width - 16.0) / tabs.size).coerceAtLeast(0.0)
-        tabs.forEachIndexed { index, control ->
-            control.setFrame(CGRectMake(8.0 + itemWidth * index, (height - 48.0) / 2.0, itemWidth, 48.0))
+        val itemWidth = ((width - 16.0) / buttons.size).coerceAtLeast(0.0)
+        buttons.forEachIndexed { index, control ->
+            control.setFrame(CGRectMake(8.0 + itemWidth * index, 12.0, itemWidth, 44.0))
         }
     }
 }
@@ -119,13 +118,13 @@ internal class NativeControl(
         val width = bounds.useContents { size.width }
         val height = bounds.useContents { size.height }
         icon.setFrame(CGRectMake((width - 22.0) / 2.0, if (showsTitle) 3.0 else (height - 22.0) / 2.0, 22.0, 22.0))
-        caption.setFrame(CGRectMake(1.0, 27.0, (width - 2.0).coerceAtLeast(0.0), 18.0))
+        caption.setFrame(CGRectMake(1.0, 27.0, (width - 2.0).coerceAtLeast(0.0), 16.0))
     }
 }
 
 private val SrTab.symbol: String
     get() = when (this) {
-        SrTab.Home -> "house"
+        SrTab.Home -> "safari"
         SrTab.Map -> "mappin.and.ellipse"
         SrTab.Feed -> "rectangle.on.rectangle"
         SrTab.Events -> "calendar"

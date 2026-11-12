@@ -23,7 +23,6 @@ import fefu.prime.srastem.onboarding.presentation.OnboardingViewModel
 import fefu.prime.srastem.registration.presentation.RegistrationScreen
 import fefu.prime.srastem.registration.presentation.RegistrationViewModel
 import fefu.prime.srastem.map.presentation.MapScreen
-import fefu.prime.srastem.map.presentation.MapDesign
 import fefu.prime.srastem.party.presentation.PartyScreen
 import fefu.prime.srastem.party.presentation.PartyViewModel
 import fefu.prime.srastem.profile.presentation.ProfileScreen
@@ -38,7 +37,6 @@ import fefu.prime.srastem.home.presentation.HomeScreen
 import fefu.prime.srastem.home.presentation.HomeViewModel
 import fefu.prime.srastem.map.presentation.MapCatalogViewModel
 import ru.srastemsya.uikit.SrGlassHost
-import ru.srastemsya.uikit.SrGlassMode
 import ru.srastemsya.uikit.SrColors
 import ru.srastemsya.uikit.SrTheme
 
@@ -103,7 +101,7 @@ private fun MainNavigation(viewModel: MainViewModel, partyViewModel: PartyViewMo
 
     SrGlassHost(
         background = {
-            Box(Modifier.fillMaxSize().background(MapDesign.ScreenGradient)) {
+            Box(Modifier.fillMaxSize().background(SrColors.Base)) {
                 if (eventListUnderGlass) {
                     EventScreen(
                         eventViewModel,
@@ -138,7 +136,6 @@ private fun MainNavigation(viewModel: MainViewModel, partyViewModel: PartyViewMo
                     selectedDestination = currentDestination,
                     modifier = Modifier.align(Alignment.BottomCenter),
                     onNavigate = viewModel::navigateTo,
-                    mode = if (eventListUnderGlass) SrGlassMode.Frosted else SrGlassMode.Liquid,
                 )
             }
         }

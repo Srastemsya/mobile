@@ -83,18 +83,13 @@ enum class SrTab(val title: String, val icon: SrIcon) {
 fun SrTabBar(
     selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier = Modifier,
     backdrop: SrBackdrop? = LocalSrBackdrop.current, mode: SrGlassMode = SrGlassMode.Liquid,
-    translucentFallback: Boolean = false
+    tabs: List<SrTab> = SrTab.entries
 ) {
-    if (backdrop != null && mode != SrGlassMode.Solid && SrNativeTabBar(selected, onSelect, modifier)) return
-    val surface = if (translucentFallback && backdrop == null && mode != SrGlassMode.Solid) {
-        Modifier.clip(SrShapes.Nav).background(SrColors.Glass)
-            .border(1.dp, SrColors.GlassEdge, SrShapes.Nav)
-    } else {
-        Modifier.srGlass(backdrop, SrShapes.Nav, mode)
-    }
+    if (backdrop != null && mode != SrGlassMode.Solid && SrNativeTabBar(selected, onSelect, modifier, tabs)) return
     Row(
-        modifier.widthIn(max = 358.dp).fillMaxWidth().heightIn(min = 72.dp)
-            .then(surface).padding(horizontal = 8.dp, vertical = 8.dp)
+        modifier.fillMaxWidth().height(72.dp)
+            .srGlass(backdrop, SrShapes.Nav, mode)
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
             .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -102,10 +97,9 @@ fun SrTabBar(
             val active = tab == selected
             val fg = if (active) SrColors.Primary else SrColors.Muted
             Column(
-                Modifier.weight(1f).heightIn(min = 48.dp).clip(SrShapes.Control)
-                    .then(if (active) Modifier.background(SrColors.Tint.copy(alpha = if (translucentFallback) .62f else 1f)) else Modifier)
-                    .selectable(active, role = Role.Tab, onClick = { onSelect(tab) })
-                    .padding(vertical = 3.dp),
+                Modifier.weight(1f).height(44.dp).clip(SrShapes.Control)
+                    .then(if (active) Modifier.background(SrColors.Tint) else Modifier)
+                    .selectable(active, role = Role.Tab, onClick = { onSelect(tab) }),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)
             ) {
@@ -223,4 +217,6 @@ fun SrListRow(
 }
 
 @Composable
-internal expect fun SrNativeTabBar(selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier): Boolean
+internal expect fun SrNativeTabBar(
+    selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier, tabs: List<SrTab>
+): Boolean

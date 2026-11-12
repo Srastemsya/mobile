@@ -74,7 +74,9 @@ actual fun Modifier.srGlass(
 }
 
 @Composable
-internal actual fun SrNativeTabBar(selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier): Boolean = false
+internal actual fun SrNativeTabBar(
+    selected: SrTab, onSelect: (SrTab) -> Unit, modifier: Modifier, tabs: List<SrTab>
+): Boolean = false
 
 @Composable
 fun SrCatalog() {
