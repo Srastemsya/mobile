@@ -18,12 +18,16 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.random.Random
+import kotlin.time.TimeSource
 
 data class ApiResult(val status: Int, val value: JsonElement?)
 
@@ -109,21 +113,37 @@ class BackendApi(
         idempotencyKey: String? = null,
         allowRefresh: Boolean = true,
     ): ApiResult {
-        val response = client.request(baseUrl.trimEnd('/') + path) {
-            this.method = HttpMethod.parse(method)
-            accept(ContentType.Application.Json)
-            if (body != null) {
-                contentType(ContentType.Application.Json)
-                setBody(body.toString())
+        val requestId = newIdempotencyKey().take(8)
+        val url = baseUrl.trimEnd('/') + path
+        val started = TimeSource.Monotonic.markNow()
+        backendLog("[$requestId] --> $method ${sanitizeUrl(path)} body=${sanitizeJson(body)}")
+        val response = try {
+            client.request(url) {
+                this.method = HttpMethod.parse(method)
+                accept(ContentType.Application.Json)
+                if (body != null) {
+                    contentType(ContentType.Application.Json)
+                    setBody(body.toString())
+                }
+                accessToken()?.let { header("Authorization", "Bearer $it") }
+                idempotencyKey?.let { header("Idempotency-Key", it) }
+                timeout { requestTimeoutMillis = if (path.contains("afterVersion=")) 40_000 else 15_000 }
             }
-            accessToken()?.let { header("Authorization", "Bearer $it") }
-            idempotencyKey?.let { header("Idempotency-Key", it) }
-            timeout { requestTimeoutMillis = if (path.contains("afterVersion=")) 40_000 else 15_000 }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            backendLog("[$requestId] xx $method ${sanitizeUrl(path)} cancelled after ${started.elapsedNow().inWholeMilliseconds}ms")
+            throw cancelled
+        } catch (error: Exception) {
+            backendLog("[$requestId] xx $method ${sanitizeUrl(path)} failed after ${started.elapsedNow().inWholeMilliseconds}ms: ${error::class.simpleName}")
+            throw error
         }
         val raw = response.bodyAsText()
         val payload = raw.takeIf(String::isNotBlank)?.let {
             runCatching { Json.parseToJsonElement(it) }.getOrNull()
         }
+        backendLog(
+            "[$requestId] <-- ${response.status.value} $method ${sanitizeUrl(path)} " +
+                "${started.elapsedNow().inWholeMilliseconds}ms body=${sanitizeJson(payload)}",
+        )
         if (response.status.value == 401 && allowRefresh && path != "/v1/auth/refresh") {
             val token = refreshToken()
             if (token != null) {
@@ -169,6 +189,57 @@ class BackendApi(
         }
 
         private const val HEX = "0123456789abcdef"
+    }
+}
+
+private fun backendLog(message: String) {
+    println("SrastemNetwork $message")
+}
+
+private fun sanitizeJson(value: JsonElement?): String = when (value) {
+    null -> "<empty>"
+    JsonNull -> "null"
+    is JsonObject -> sanitizeObject(value).toString()
+    is JsonArray -> value.joinToString(prefix = "[", postfix = "]") { sanitizeJson(it) }
+    is JsonPrimitive -> value.toString()
+}
+
+private fun sanitizeObject(value: JsonObject, parentKey: String = ""): JsonObject = buildJsonObject {
+    value.forEach { (key, child) ->
+        put(
+            key,
+            if (isSensitiveLogField(key, parentKey)) JsonPrimitive("[REDACTED]")
+            else when (child) {
+                is JsonObject -> sanitizeObject(child, key)
+                is JsonArray -> JsonArray(child.map { sanitizeElement(it, key) })
+                else -> child
+            },
+        )
+    }
+}
+
+private fun sanitizeElement(value: JsonElement, parentKey: String): JsonElement = when (value) {
+    JsonNull -> JsonNull
+    is JsonObject -> sanitizeObject(value, parentKey)
+    is JsonArray -> JsonArray(value.map { sanitizeElement(it, parentKey) })
+    else -> value
+}
+
+private fun isSensitiveLogField(key: String, parentKey: String): Boolean {
+    val normalized = key.lowercase().filter(Char::isLetterOrDigit)
+    if (normalized in setOf("accesstoken", "refreshtoken", "token", "authorization", "idempotencykey", "password", "secret", "phone", "email", "destination", "birthdate", "displayname", "organizername", "participantname", "inviteurl", "invitationurl", "query", "q")) return true
+    if (normalized.contains("token") || normalized.contains("password") || normalized.contains("secret")) return true
+    return normalized in setOf("code", "otp") && parentKey.lowercase() != "error"
+}
+
+private fun sanitizeUrl(path: String): String = path.split("?", limit = 2).let { parts ->
+    if (parts.size == 1) path else {
+        val query = parts[1].split('&').joinToString("&") { parameter ->
+            val pair = parameter.split("=", limit = 2)
+            val key = pair[0]
+            if (isSensitiveLogField(key, "query")) "$key=[REDACTED]" else parameter
+        }
+        "${parts[0]}?$query"
     }
 }
 
