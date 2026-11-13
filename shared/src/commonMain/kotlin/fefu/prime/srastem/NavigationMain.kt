@@ -154,7 +154,10 @@ private fun MainNavigation(
     // AC-05: вход с Главной («Свайпать события») открывает выбор режима с предвыбранным kind=EVENT;
     // вход вкладкой «Лента» сбрасывает предвыбранный тип.
     LaunchedEffect(currentDestination, feedEventsEntry) {
-        if (currentDestination == Destination.FeedScreen) {
+        if (currentDestination == Destination.FeedScreen &&
+            feedState.cards.isEmpty() && !feedState.filterOpen && feedState.stub == null &&
+            !feedState.busy && feedState.error == null && !feedState.profileIncomplete
+        ) {
             feedModeViewModel.onEvent(
                 if (feedEventsEntry) FeedModeEvent.OpenedWithEventsKind else FeedModeEvent.OpenedFromTab,
             )

@@ -26,6 +26,8 @@ data class FeedModeState(
     val fieldError: String? = null,
     val cards: List<FeedCard> = emptyList(),
     val feedError: String? = null,
+    val swipe: FeedSwipeState = FeedSwipeState(),
+    val contextLabel: String = "Одно устройство · общий бюджет",
 )
 
 /** Явная заглушка точки входа сценария, который ещё не реализован (FE-F01/FE-F04). */

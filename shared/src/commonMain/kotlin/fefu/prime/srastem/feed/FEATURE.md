@@ -12,7 +12,7 @@
 - Сценарии ленты доступны только с завершённым профилем: при входе выполняется проверка `GET /v1/me profileComplete`; неполный профиль или `403 PROFILE_INCOMPLETE` автоматически открывает завершение регистрации (`RegistrationViewModel.openProfileCompletion`). Ошибка проверки блокирует выбор и предлагает повторить запрос.
 - Бюджет в фильтрах общий (`budgetTotalMinor`, копейки); цена карточки — на человека; проверку `price * partySize <= budgetTotal` выполняет сервер.
 - FE-F01 принимает один `PLACE` или `EVENT`, серверную категорию данного типа или «Все», дату только для `EVENT`, необязательный общий бюджет и число участников. Отрицательный/нецелый бюджет и число участников меньше 1 при заданном бюджете блокируют отправку с ошибкой у поля.
-- После отправки фильтров вызывается `GET /v1/feed/candidates`; экран показывает полученные названия карточек и кнопку «Изменить фильтры», возвращающую к сохранённым значениям. Полноценный swipe-контроллер относится к FE-F02 и ещё не подключён.
+- После отправки фильтров вызывается `GET /v1/feed/candidates`; экран показывает карточки через Android swipe-интерфейс FE-F02 и предоставляет кнопку «Изменить фильтры», возвращающую к сохранённым значениям.
 - Комната: фазы `LOBBY/VOTING/REFRESHING/MATCHED/EXHAUSTED/CLOSED`; snapshot хранит только свои голоса (`myVotes`), устаревшие версии (`version` меньше текущей) игнорируются; long polling — один открытый `GET /rooms/{id}?afterVersion=&waitSeconds=25`, `204` — немедленный повтор, сетевая ошибка — повтор с задержкой 1.5 c.
 
 ## Архитектура
@@ -42,9 +42,10 @@
 
 ### Presentation Layer (`feed/presentation`)
 
-- ViewModel: `FeedModeViewModel(CheckFeedAccessUseCase)`; State: `FeedModeState(pendingKind, busy, profileIncomplete, error, stub)`; Events: `FeedModeEvent` — `OpenedFromTab`, `OpenedWithEventsKind`, `SingleDeviceSelected`, `MultiDeviceSelected`, `DismissNotice`, `RetryProfileCheck`, `CompleteProfileSelected`. Методы `onError(FeedError)` (реактивный `403 PROFILE_INCOMPLETE`) и `onRegistrationCompleted()`.
+- ViewModel: `FeedModeViewModel(CheckFeedAccessUseCase)`; State: `FeedModeState` includes mode/filter/result data and `FeedSwipeState(cards,queuedCards,index,decisions,loadingNextPool)`; Events include mode/filter actions plus `SwipeDecided`, `UndoSwipe`, `SwipeFinished` and `SwipePoolReady`. While a pool is loading, decisions are ignored and the UI replaces the card/actions with loading feedback. `FeedSwipeState` exposes current card, undo availability and progress. Methods `onError(FeedError)` (reactive `403 PROFILE_INCOMPLETE`) and `onRegistrationCompleted()`.
 - Экраны: `FeedModeScreen` (фрейм 280-10679: `SrTopBar` «Лента», заголовок, две стекло-карточки с иконками) и `FeedStepScreen` (последующий шаг без таббара, «Назад» в `SrTopBar`). Фон — градиент Главной (`FeedDesign.ScreenGradient` из токенов `SrColors.Base/Tint/GlassIris`), карточки используют `SrChoiceSurface` и `SrShapes.Card`; без backdrop применяется подложка `color/surface/solid`.
 - FE-F01: `FeedModeViewModel` хранит черновик фильтров, загруженные `FeedCategoryOption`, ошибки и текущие результаты; `FeedModeScreen` рисует выбор типа и категории в переносящемся по строкам ряду чипов (включая «Все»), `SrDateField` для даты события (передаёт ISO `YYYY-MM-DD`), бюджет, число участников, результат загрузки и возврат к фильтрам. Экран фильтров использует заголовок `SrTopBar` «Фильтры»; основная кнопка подписана «Показать подборку».
+- FE-F02 (Android): `FeedSwipeState` stores the active local pool (at most 10 cards), queued candidates, active index, local decisions and undo history in `FeedModeViewModel`; `FeedSwipeDecided` maps horizontal drags and `SrVoteActions` to `LIKE`/`SKIP`, `UndoSwipe` removes the previous decision. At each local ten-card boundary, the next up-to-ten queued candidates become active and index/decision history reset. This is a client-side split only: API pages may contain up to 20 and have no page-size query. `FeedModeScreen` displays `SrVoteCard` with project artwork fallback, layered decorative cards, position and progress. No detail navigation is attached to card taps. Room context rendering is reserved through `contextLabel`; FE-F04 does not yet supply it.
 - Навигация: `NavigationMain` рендерит `FeedModeScreen` для `Destination.FeedScreen`, таббар скрывается при `stub != null`; `MainViewModel.navigateToFeedWithEventsKind()` — вход с Главной; `RegistrationViewModel.openProfileCompletion()` — маршрутизация незавершённого профиля.
 
 ## Зависимости
@@ -67,7 +68,7 @@
 - FE-F04 остаётся явной заглушкой (`FeedModeStub`) до реализации комнаты.
 - Проверка профиля при входе блокирует выбор при ошибке сети до успешного повтора. FE-F01 отображает ошибку загрузки категорий или кандидатов в состоянии экрана.
 - Платформенные отличия: liquid glass доступен на Android API 31+ и iOS с `UIVisualEffectView`; ниже — полупрозрачная заливка/`color/surface/solid` (см. `uikit/Glass.*`). Long polling использует socket timeout 35 c при `waitSeconds=25` контракта.
-- Известные ограничения: FE-F02 swipe-интерфейс и FE-F04 комната ещё не подключены. API курсоры после первой страницы не запрашиваются.
+- Известные ограничения: Android swipe-интерфейс подключён; FE-F04 ещё не поставляет комнатный контекст, поэтому `contextLabel` остаётся значением по умолчанию до интеграции. FE-F03/FE-F05 отвечают за загрузку следующих пулов; API курсоры после первой страницы пока не запрашиваются.
 
 ## Тестовые сценарии
 

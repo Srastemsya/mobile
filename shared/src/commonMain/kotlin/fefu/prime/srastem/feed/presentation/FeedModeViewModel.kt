@@ -44,6 +44,10 @@ class FeedModeViewModel(
             is FeedModeEvent.PartySizeChanged -> _state.update { it.copy(partySizeText = event.value) }
             FeedModeEvent.SubmitFilters -> submitFilters()
             FeedModeEvent.ChangeFilters -> _state.update { it.copy(filterOpen = true, feedError = null) }
+            is FeedModeEvent.SwipeDecided -> _state.update { it.copy(swipe = it.swipe.decide(event.decision)) }
+            FeedModeEvent.UndoSwipe -> _state.update { it.copy(swipe = it.swipe.undo()) }
+            FeedModeEvent.SwipeFinished -> _state.update { it.copy(swipe = it.swipe.copy(loadingNextPool = true)) }
+            FeedModeEvent.SwipePoolReady -> _state.update { it.copy(swipe = it.swipe.copy(loadingNextPool = false)) }
         }
     }
 
@@ -94,7 +98,7 @@ class FeedModeViewModel(
         if (getCandidates == null) { _state.update { it.copy(fieldError = "Загрузка подборки недоступна") }; return }
         _state.update { it.copy(busy = true, fieldError = null, feedError = null) }
         viewModelScope.launch {
-            getCandidates(filters).onSuccess { page -> _state.update { it.copy(busy = false, filterOpen = false, cards = page.items, feedError = if (page.items.isEmpty()) "Подходящих вариантов пока нет. Измените фильтры." else null) } }
+            getCandidates(filters).onSuccess { page -> _state.update { it.copy(busy = false, filterOpen = false, cards = page.items, swipe = FeedSwipeState.fromCandidates(page.items), feedError = if (page.items.isEmpty()) "Подходящих вариантов пока нет. Измените фильтры." else null) } }
                 .onFailure { error -> _state.update { it.copy(busy = false, feedError = error.message ?: "Не удалось загрузить подборку") } }
         }
     }

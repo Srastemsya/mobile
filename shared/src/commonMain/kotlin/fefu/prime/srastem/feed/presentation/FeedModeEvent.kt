@@ -28,4 +28,8 @@ sealed interface FeedModeEvent {
     data class PartySizeChanged(val value: String) : FeedModeEvent
     data object SubmitFilters : FeedModeEvent
     data object ChangeFilters : FeedModeEvent
+    data class SwipeDecided(val decision: fefu.prime.srastem.feed.domain.SwipeDecision) : FeedModeEvent
+    data object UndoSwipe : FeedModeEvent
+    data object SwipeFinished : FeedModeEvent
+    data object SwipePoolReady : FeedModeEvent
 }
