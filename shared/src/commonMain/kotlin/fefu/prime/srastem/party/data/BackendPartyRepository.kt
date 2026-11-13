@@ -3,9 +3,14 @@ package fefu.prime.srastem.party.data
 import fefu.prime.srastem.backend.BackendApi
 import fefu.prime.srastem.backend.jsonObjectOf
 import fefu.prime.srastem.backend.string
-import fefu.prime.srastem.currentDateParts
+import fefu.prime.srastem.feed.data.FeedContract
+import fefu.prime.srastem.feed.data.FeedMappers
+import fefu.prime.srastem.feed.data.encodeQueryComponent
+import fefu.prime.srastem.feed.domain.FeedCard
+import fefu.prime.srastem.feed.domain.FeedFilters
+import fefu.prime.srastem.feed.domain.RoomPhase
+import fefu.prime.srastem.feed.domain.RoomSnapshot
 import fefu.prime.srastem.party.domain.PartyCategory
-import fefu.prime.srastem.party.domain.PartyFeedType
 import fefu.prime.srastem.party.domain.PartyFilters
 import fefu.prime.srastem.party.domain.PartyItem
 import fefu.prime.srastem.party.domain.PartyParticipant
@@ -13,42 +18,30 @@ import fefu.prime.srastem.party.domain.PartyPhase
 import fefu.prime.srastem.party.domain.PartyRepository
 import fefu.prime.srastem.party.domain.PartyRoom
 import fefu.prime.srastem.party.domain.PartySession
-import fefu.prime.srastem.party.domain.PartyVote
+import fefu.prime.srastem.party.domain.toFeedFilters
+import fefu.prime.srastem.party.domain.toPartyFeedType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
+/**
+ * Унаследованный репозиторий комнаты (сценарии FE-F04…FE-F06 до переноса на use cases ленты).
+ * После рефакторинга FE-F00 не парсит контракт сам: query и тела строит [FeedContract],
+ * DTO разбирает [FeedMappers] из `feed/data`, а доменные проекции комнаты строятся из
+ * канонического [RoomSnapshot].
+ */
 class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
     private val pendingFilters = mutableMapOf<String, PartyFilters>()
 
     override suspend fun getFeedItems(filters: PartyFilters): List<PartyItem> {
-        val kind = if (filters.feedType == PartyFeedType.EVENTS) "EVENT" else "PLACE"
-        val categoryId = categoryId(filters)
-        val date = localDate(filters)
-        val partySize = 1
-        val budgetMinor = filters.budgetPerPerson.coerceAtLeast(0) * 100
+        val feedFilters = filters.toFeedFilters()
         val all = mutableListOf<PartyItem>()
         var cursor: String? = null
         do {
-            val query = buildString {
-                append("/v1/feed/candidates?kind=").append(kind)
-                categoryId?.let { append("&categoryId=").append(it) }
-                date?.let { append("&localDate=").append(it) }
-                append("&budgetTotalMinor=").append(budgetMinor)
-                append("&partySize=").append(partySize)
-                cursor?.let { append("&cursor=").append(it.encodeQueryComponent()) }
-            }
-            val page = api.get(query).jsonObject
-            all += page["items"]?.jsonArray.orEmpty().map { candidate -> parseCard(candidate.jsonObject) }
+            val page = api.get(FeedContract.candidatesQuery(feedFilters, cursor)).jsonObject
+            all += FeedMappers.page(page).items.map(::partyItem)
             cursor = page.string("nextCursor")
         } while (cursor != null)
         return all
@@ -64,8 +57,7 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
         api.clearIdempotencyKey(inviteScope)
         val inviteUrl = invite?.string("url") ?: error("Сервер не вернул приглашение")
         api.clearIdempotencyKey(createScope)
-        val room = parseRoom(created)
-        return PartySession(api.userId(), room, inviteUrl)
+        return PartySession(api.userId(), partyRoom(FeedMappers.room(created, api.userId())), inviteUrl)
     }
 
     override suspend fun joinRoom(roomId: String, participantName: String): PartySession {
@@ -74,7 +66,7 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
         val joined = api.post("/v1/room-invites/join", jsonObjectOf("token" to token), api.idempotencyKey(joinScope)).value?.jsonObject
             ?: error("Сервер не вернул комнату")
         api.clearIdempotencyKey(joinScope)
-        return PartySession(api.userId(), parseRoom(joined), roomId)
+        return PartySession(api.userId(), partyRoom(FeedMappers.room(joined, api.userId())), roomId)
     }
 
     override suspend fun updateFilters(roomId: String, participantId: String, filters: PartyFilters) {
@@ -82,52 +74,44 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
     }
 
     override suspend fun startFeed(roomId: String, participantId: String) {
-        val room = api.get("/v1/rooms/$roomId").jsonObject
-        val members = room["members"]?.jsonArray?.size ?: 1
-        val filters = pendingFilters[roomId] ?: PartyFilters()
+        val room = FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId())
+        val members = room.members.size.coerceAtLeast(1)
+        val filters = (pendingFilters[roomId] ?: PartyFilters()).toFeedFilters(members)
         val scope = "start-room:$roomId"
-        api.post("/v1/rooms/$roomId/start", startBody(filters, members), api.idempotencyKey(scope))
+        api.post("/v1/rooms/$roomId/start", FeedContract.startBody(filters), api.idempotencyKey(scope))
         api.clearIdempotencyKey(scope)
         pendingFilters.remove(roomId)
     }
 
     override suspend fun loadMoreItems(roomId: String, participantId: String, nextItemIndex: Int): PartyRoom =
-        parseRoom(api.get("/v1/rooms/$roomId").jsonObject)
+        partyRoom(FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()))
 
-    override suspend fun submitVote(roomId: String, participantId: String, itemId: String, vote: PartyVote) {
-        val room = api.get("/v1/rooms/$roomId").jsonObject
-        val round = room["round"]?.takeUnless { it == JsonNull }?.jsonObject ?: error("Раунд завершён")
-        val roundId = round.string("id") ?: error("Сервер не вернул ID раунда")
-        val candidate = round["candidates"]?.jsonArray.orEmpty().firstOrNull { card ->
-            card.jsonObject["ref"]?.jsonObject?.string("id") == itemId
-        }?.jsonObject ?: error("Карточка больше недоступна")
-        val kind = candidate["ref"]?.jsonObject?.string("kind") ?: "EVENT"
-        val choice = if (vote == PartyVote.LIKE) "LIKE" else "PASS"
+    override suspend fun submitVote(roomId: String, participantId: String, itemId: String, vote: fefu.prime.srastem.feed.domain.SwipeDecision) {
+        val room = FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId())
+        val roundId = room.roundId ?: error("Раунд завершён")
+        val candidate = room.candidates.firstOrNull { it.ref.id == itemId } ?: error("Карточка больше недоступна")
         api.put(
-            "/v1/rooms/$roomId/rounds/$roundId/votes/$kind/$itemId",
-            jsonObjectOf("choice" to choice),
+            "/v1/rooms/$roomId/rounds/$roundId/votes/${candidate.ref.kind.name}/$itemId",
+            jsonObjectOf("choice" to if (vote == fefu.prime.srastem.feed.domain.SwipeDecision.LIKE) "LIKE" else "PASS"),
         )
     }
 
     override suspend fun completeFeed(roomId: String, participantId: String) {
-        val room = api.get("/v1/rooms/$roomId").jsonObject
-        val roundId = room["round"]?.takeUnless { it == JsonNull }?.jsonObject?.string("id")
+        val roundId = FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()).roundId
             ?: error("Раунд уже завершён")
         api.putEmpty("/v1/rooms/$roomId/rounds/$roundId/completion")
     }
 
     override fun observeRoom(roomId: String): Flow<PartyRoom> = flow {
-        var snapshot = api.get("/v1/rooms/$roomId").jsonObject
-        var room = parseRoom(snapshot)
+        var room = partyRoom(FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()))
         emit(room)
         while (room.phase != PartyPhase.MATCH && room.phase != PartyPhase.FINISHED) {
             try {
                 val result = api.getResult("/v1/rooms/$roomId?afterVersion=${room.version}&waitSeconds=25")
                 if (result.status == 204) continue
-                snapshot = result.value?.jsonObject ?: continue
-                val next = parseRoom(snapshot)
-                if (next.version >= room.version) {
-                    room = next
+                val snapshot = result.value?.jsonObject?.let { FeedMappers.room(it, api.userId()) } ?: continue
+                if (snapshot.version >= room.version) {
+                    room = partyRoom(snapshot)
                     emit(room)
                 }
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -138,135 +122,65 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
         }
     }
 
-    private fun startBody(filters: PartyFilters, members: Int): JsonObject {
-        val budgetMinor = filters.budgetPerPerson.coerceAtLeast(0).toLong() * 100L * members.coerceAtLeast(1)
-        return buildJsonObject {
-            put("filters", buildJsonObject {
-                put("kind", JsonPrimitive(if (filters.feedType == PartyFeedType.EVENTS) "EVENT" else "PLACE"))
-                categoryId(filters)?.let { put("categoryId", JsonPrimitive(it)) }
-                localDate(filters)?.let { put("localDate", JsonPrimitive(it)) }
-                put("budgetTotal", buildJsonObject {
-                    put("amountMinor", JsonPrimitive(budgetMinor))
-                    put("currency", JsonPrimitive("RUB"))
-                })
-            })
-        }
-    }
-
-    private fun parseRoom(json: JsonObject): PartyRoom {
-        val id = json.string("id").orEmpty()
-        val owner = json.string("ownerId").orEmpty()
-        val version = json["version"]?.jsonPrimitive?.contentOrNull?.toLongOrNull() ?: 0L
-        val filtersObject = json["filters"]?.takeUnless { it == JsonNull }?.jsonObject
-        val filters = filtersObject?.let(::parseFilters) ?: pendingFilters[id] ?: PartyFilters()
-        val round = json["round"]?.takeUnless { it == JsonNull }?.jsonObject
-        val members = json["members"]?.jsonArray.orEmpty().map { member ->
-            val item = member.jsonObject
-            PartyParticipant(
-                id = item.string("userId").orEmpty(),
-                name = item.string("displayName") ?: "Участник",
-                isConnected = true,
-                completedFeed = item.string("userId") == api.userId() &&
-                    json["round"]?.takeUnless { it == JsonNull }?.jsonObject?.get("myFinished")?.toString() == "true",
-            )
-        }
-        val candidates = round?.get("candidates")?.jsonArray.orEmpty().map { parseCard(it.jsonObject) }
-        val votes = round?.get("myVotes")?.jsonArray.orEmpty().mapNotNull { vote ->
-            val item = vote.jsonObject
-            val candidateId = item["candidate"]?.jsonObject?.string("id") ?: return@mapNotNull null
-            val value = if (item.string("choice") == "LIKE") PartyVote.LIKE else PartyVote.SKIP
-            candidateId to mapOf(api.userId() to value)
-        }.toMap()
-        val resultRef = json["result"]?.takeUnless { it == JsonNull }?.jsonObject?.get("winner")?.jsonObject
-        val matched = resultRef?.string("id")?.let { winner -> candidates.firstOrNull { it.id == winner } }
-        val state = json.string("state")
-        val ownFinished = round?.get("myFinished")?.toString() == "true"
-        val phase = when {
-            state == "LOBBY" -> PartyPhase.LOBBY
-            state == "VOTING" && ownFinished -> PartyPhase.WAITING
-            state == "VOTING" || state == "REFRESHING" -> PartyPhase.FEED
-            state == "MATCHED" -> PartyPhase.MATCH
-            else -> PartyPhase.FINISHED
-        }
+    /** Проекция канонического snapshot комнаты в модель унаследованного UI комнаты. */
+    private fun partyRoom(snapshot: RoomSnapshot): PartyRoom {
+        val items = snapshot.candidates.map(::partyItem)
         return PartyRoom(
-            id = id,
-            name = json.string("name") ?: "",
-            hostId = owner,
-            participants = members,
-            filters = filters,
-            phase = phase,
-            items = candidates,
-            votes = votes,
-            matchedItem = matched,
-            version = version,
-            roundId = round?.string("id"),
-            finishedCount = round?.get("finishedCount")?.jsonPrimitive?.intOrNull ?: 0,
-        )
-    }
-
-    private fun parseFilters(json: JsonObject): PartyFilters {
-        val kind = json.string("kind")
-        val amount = json["budgetTotal"]?.takeUnless { it == JsonNull }?.jsonObject
-            ?.get("amountMinor")?.jsonPrimitive?.intOrNull ?: 200_000
-        val partySize = json["partySize"]?.jsonPrimitive?.intOrNull?.coerceAtLeast(1) ?: 1
-        return PartyFilters(
-            feedType = if (kind == "EVENT") PartyFeedType.EVENTS else PartyFeedType.PLACES,
-            category = when (json.string("categoryId")) {
-                "food" -> PartyCategory.FOOD
-                "outdoors" -> PartyCategory.ACTIVITIES
-                else -> PartyCategory.ALL
+            id = snapshot.id,
+            name = snapshot.name.orEmpty(),
+            hostId = snapshot.ownerId,
+            participants = snapshot.members.map { member ->
+                PartyParticipant(
+                    id = member.userId,
+                    name = member.displayName.ifBlank { "Участник" },
+                    isConnected = true,
+                    completedFeed = member.userId == api.userId() && snapshot.myFinished,
+                )
             },
-            budgetPerPerson = amount / 100 / partySize,
-            whenLabel = json.string("localDate") ?: "Сегодня",
+            filters = snapshot.filters?.toPartyFilters() ?: pendingFilters[snapshot.id] ?: PartyFilters(),
+            phase = when (snapshot.phase) {
+                RoomPhase.LOBBY -> PartyPhase.LOBBY
+                RoomPhase.VOTING -> if (snapshot.myFinished) PartyPhase.WAITING else PartyPhase.FEED
+                RoomPhase.REFRESHING -> PartyPhase.FEED
+                RoomPhase.MATCHED -> PartyPhase.MATCH
+                RoomPhase.EXHAUSTED, RoomPhase.CLOSED -> PartyPhase.FINISHED
+            },
+            items = items,
+            votes = snapshot.myVotes.mapValues { (_, decision) -> mapOf(api.userId() to decision) },
+            matchedItem = snapshot.winner?.let { winner -> items.firstOrNull { it.id == winner.id } },
+            version = snapshot.version,
+            roundId = snapshot.roundId,
+            finishedCount = snapshot.finishedCount,
         )
     }
 
-    private fun parseCard(card: JsonObject): PartyItem {
-        val ref = card["ref"]?.jsonObject
-        val location = card["location"]?.jsonObject
-        val price = card["price"]?.takeUnless { it == JsonNull }?.jsonObject?.get("amountMinor")?.jsonPrimitive?.intOrNull
-        val category = when (card.string("categoryId")) {
-            "food" -> "Еда и бары"
-            "outdoors" -> "Активность"
-            "culture" -> "Культура"
-            else -> "Событие"
-        }
-        val priceLabel = when {
-            price == null -> "Цена неизвестна"
-            price == 0 -> "Бесплатно"
-            else -> "${price / 100} ₽"
-        }
-        val image = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.string("url")?.let(api::resolveMediaUrl)
-        val admission = card["admission"]?.takeUnless { it == JsonNull }?.jsonObject
-        return PartyItem(
-            id = ref?.string("id").orEmpty(),
-            title = card.string("title").orEmpty(),
-            category = category,
-            price = priceLabel,
-            location = location?.string("address").orEmpty(),
-            description = card.string("description").orEmpty().ifBlank { card.string("title").orEmpty() },
-            imageKey = image.orEmpty(),
-            pricePerPerson = price?.div(100) ?: Int.MAX_VALUE,
-            confirmedCount = admission?.get("confirmedCount")?.jsonPrimitive?.intOrNull,
-            capacity = admission?.get("capacity")?.jsonPrimitive?.intOrNull,
-            remainingCount = admission?.get("remainingCount")?.jsonPrimitive?.intOrNull,
-        )
-    }
+    private fun partyItem(card: FeedCard): PartyItem = PartyItem(
+        id = card.ref.id,
+        title = card.title,
+        category = categoryLabel(card.category),
+        price = card.priceLabel,
+        location = card.addressOrDate,
+        description = card.description.ifBlank { card.title },
+        imageKey = api.resolveMediaUrl(card.coverUrl).orEmpty(),
+        pricePerPerson = card.priceMinor?.div(100)?.toInt() ?: Int.MAX_VALUE,
+    )
 
-    private fun categoryId(filters: PartyFilters): String? = when (filters.category) {
-        PartyCategory.ALL -> null
-        PartyCategory.FOOD -> "food"
-        PartyCategory.ACTIVITIES -> "outdoors"
-    }
+    private fun FeedFilters.toPartyFilters(): PartyFilters = PartyFilters(
+        feedType = kind.toPartyFeedType(),
+        category = when (categoryId) {
+            "food" -> PartyCategory.FOOD
+            "outdoors" -> PartyCategory.ACTIVITIES
+            else -> PartyCategory.ALL
+        },
+        budgetPerPerson = ((budgetTotalMinor ?: 200_000L) / 100 / (partySize ?: 1).coerceAtLeast(1)).toInt(),
+        whenLabel = localDate ?: "Сегодня",
+    )
 
-    private fun localDate(filters: PartyFilters): String? {
-        if (filters.feedType == PartyFeedType.PLACES) return null
-        val match = Regex("(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})").find(filters.whenLabel)
-        val parts = match?.destructured?.toList() ?: if (filters.whenLabel.contains("Сегодня", true)) {
-            currentDateParts().map(Int::toString)
-        } else return null
-        val (year, month, day) = if (match == null) parts.reversed() else listOf(parts[2], parts[1], parts[0])
-        return "${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}"
+    private fun categoryLabel(categoryId: String): String = when (categoryId) {
+        "food" -> "Еда и бары"
+        "outdoors" -> "Активность"
+        "culture" -> "Культура"
+        else -> "Событие"
     }
 
     private fun extractInviteToken(value: String): String {
@@ -274,18 +188,5 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
             .ifBlank { value.takeIf { !it.contains("://") } ?: "" }
         require(token.isNotBlank()) { "В ссылке-приглашении нет токена" }
         return token
-    }
-}
-
-private fun String.encodeQueryComponent(): String = buildString {
-    encodeToByteArray().forEach { byte ->
-        val value = byte.toInt() and 0xff
-        if ((value in 0x41..0x5a) || (value in 0x61..0x7a) || (value in 0x30..0x39) || value == 0x2d || value == 0x2e || value == 0x5f || value == 0x7e) {
-            append(value.toChar())
-        } else {
-            append('%')
-            append("0123456789ABCDEF"[value ushr 4])
-            append("0123456789ABCDEF"[value and 0x0f])
-        }
     }
 }
