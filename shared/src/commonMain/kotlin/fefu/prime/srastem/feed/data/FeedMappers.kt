@@ -116,6 +116,12 @@ internal object FeedMappers {
             }.toMap(),
             myFinished = round?.get("myFinished")?.jsonPrimitive?.content == "true",
             finishedCount = round?.get("finishedCount")?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+            roundNumber = round?.get("number")?.jsonPrimitive?.content?.toIntOrNull(),
+            expiresAt = round?.get("expiresAt")?.jsonPrimitive?.content,
+            memberCount = round?.get("memberCount")?.jsonPrimitive?.content?.toIntOrNull() ?: 0,
+            resultBasis = json["result"]?.takeUnless { it == JsonNull }?.jsonObject?.get("basis")?.jsonPrimitive?.content,
+            resultLikes = json["result"]?.takeUnless { it == JsonNull }?.jsonObject?.get("likes")?.jsonPrimitive?.content?.toIntOrNull(),
+            resultMemberCount = json["result"]?.takeUnless { it == JsonNull }?.jsonObject?.get("memberCount")?.jsonPrimitive?.content?.toIntOrNull(),
             winner = json["result"]?.takeUnless { it == JsonNull }?.jsonObject
                 ?.get("winner")?.jsonObject?.let { winner ->
                     FeedRef(kind(winner["kind"]?.jsonPrimitive?.content), winner["id"]?.jsonPrimitive?.content.orEmpty())

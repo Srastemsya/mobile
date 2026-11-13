@@ -19,4 +19,10 @@ data class RoomSnapshot(
     val myFinished: Boolean,
     val finishedCount: Int,
     val winner: FeedRef?,
+    val roundNumber: Int? = null,
+    val expiresAt: String? = null,
+    val memberCount: Int = 0,
+    val resultBasis: String? = null,
+    val resultLikes: Int? = null,
+    val resultMemberCount: Int? = null,
 )

@@ -12,7 +12,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val state = ViewModelProvider(this)[ActivityStateHolder::class.java]
-        intent.dataString?.let { link ->
+        val inviteLink = intent.dataString
+        if (inviteLink == null && state.roomLobby.restoreActiveRoom()) {
+            state.main.navigateTo(Destination.FeedScreen)
+            state.feed.openRoomFromInvite()
+        }
+        inviteLink?.let { link ->
             // Deeplink-приглашение комнаты (FE-F04): экран комнаты открывается поверх ленты.
             state.main.navigateTo(Destination.FeedScreen)
             state.feed.openRoomFromInvite()

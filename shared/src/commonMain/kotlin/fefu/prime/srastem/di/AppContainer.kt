@@ -17,6 +17,7 @@ import fefu.prime.srastem.party.domain.PartyRepository
 import fefu.prime.srastem.feed.data.BackendFeedRepository
 import fefu.prime.srastem.feed.data.BackendFeedCategoryRepository
 import fefu.prime.srastem.feed.data.BackendRoomRepository
+import fefu.prime.srastem.feed.data.SettingsActiveRoomStore
 import fefu.prime.srastem.feed.domain.CompleteRoundUseCase
 import fefu.prime.srastem.feed.domain.CreateInviteUseCase
 import fefu.prime.srastem.feed.domain.CreateRoomUseCase
@@ -105,6 +106,11 @@ class AppContainer(
         fefu.prime.srastem.feed.domain.ObserveRoomUseCase(roomRepository),
         fefu.prime.srastem.feed.domain.StartRoomUseCase(roomRepository),
         api::userId,
+        fefu.prime.srastem.feed.domain.SubmitVoteUseCase(roomRepository),
+        fefu.prime.srastem.feed.domain.CompleteRoundUseCase(roomRepository),
+        roomRepository::getSnapshot,
+        GetCatalogDetailsUseCase(feedRepository),
+        SettingsActiveRoomStore(settings),
     )
 
     fun createProfileViewModel() = ProfileViewModel(profileRepository)
