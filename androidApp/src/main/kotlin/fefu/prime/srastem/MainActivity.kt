@@ -14,11 +14,12 @@ class MainActivity : ComponentActivity() {
         val state = ViewModelProvider(this)[ActivityStateHolder::class.java]
         intent.dataString?.let { link ->
             // Deeplink-приглашение комнаты (FE-F04): экран комнаты открывается поверх ленты.
-            state.main.navigateTo(Destination.RoomScreen)
-            state.party.acceptInvite(link)
+            state.main.navigateTo(Destination.FeedScreen)
+            state.feed.openRoomFromInvite()
+            state.roomLobby.acceptInvite(link)
         }
         setContent {
-            NavigationMain(state.main, state.onboarding, state.registration, state.party, state.feed, state.profile, state.events, state.home, state.map)
+            NavigationMain(state.main, state.onboarding, state.registration, state.party, state.feed, state.roomLobby, state.profile, state.events, state.home, state.map)
         }
     }
 
@@ -27,8 +28,9 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         intent.dataString?.let { link ->
             val state = ViewModelProvider(this)[ActivityStateHolder::class.java]
-            state.main.navigateTo(Destination.RoomScreen)
-            state.party.acceptInvite(link)
+            state.main.navigateTo(Destination.FeedScreen)
+            state.feed.openRoomFromInvite()
+            state.roomLobby.acceptInvite(link)
         }
     }
 }

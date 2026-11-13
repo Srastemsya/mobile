@@ -24,6 +24,8 @@ import fefu.prime.srastem.onboarding.presentation.OnboardingViewModel
 import fefu.prime.srastem.registration.presentation.RegistrationScreen
 import fefu.prime.srastem.registration.presentation.RegistrationViewModel
 import fefu.prime.srastem.map.presentation.MapScreen
+import fefu.prime.srastem.feed.presentation.RoomLobbyViewModel
+import fefu.prime.srastem.feed.presentation.RoomLobbyScreen
 import fefu.prime.srastem.feed.presentation.FeedModeScreen
 import fefu.prime.srastem.feed.presentation.FeedModeViewModel
 import fefu.prime.srastem.feed.presentation.FeedModeEvent
@@ -51,6 +53,7 @@ fun NavigationMain(
     registrationViewModel: RegistrationViewModel,
     partyViewModel: PartyViewModel,
     feedModeViewModel: FeedModeViewModel,
+    roomLobbyViewModel: RoomLobbyViewModel,
     profileViewModel: ProfileViewModel,
     eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
@@ -105,6 +108,7 @@ fun NavigationMain(
                 viewModel,
                 partyViewModel,
                 feedModeViewModel,
+                roomLobbyViewModel,
                 profileViewModel,
                 eventViewModel,
                 homeViewModel,
@@ -120,6 +124,7 @@ private fun MainNavigation(
     viewModel: MainViewModel,
     partyViewModel: PartyViewModel,
     feedModeViewModel: FeedModeViewModel,
+    roomLobbyViewModel: RoomLobbyViewModel,
     profileViewModel: ProfileViewModel,
     eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
@@ -135,7 +140,8 @@ private fun MainNavigation(
     val eventListUnderGlass = currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
 
     FeedBackHandler(enabled = currentDestination == Destination.FeedScreen) {
-        if (feedState.stub != null || feedState.filterOpen || feedState.cards.isNotEmpty() || feedState.feedError != null) feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+        if (feedState.stub?.title?.startsWith("FE-F04") == true) { roomLobbyViewModel.leave(); feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) }
+        else if (feedState.stub != null || feedState.filterOpen || feedState.cards.isNotEmpty() || feedState.feedError != null) feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
         else viewModel.backFromFeed()
     }
 
@@ -144,6 +150,8 @@ private fun MainNavigation(
             onFeedProfileCompletionRequested()
         }
     }
+
+    LaunchedEffect(currentDestination) { if (currentDestination != Destination.FeedScreen) roomLobbyViewModel.leave() }
 
     LaunchedEffect(currentDestination, eventState.page) {
         if (currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST) {
@@ -186,6 +194,7 @@ private fun MainNavigation(
                     modifier = Modifier.fillMaxSize(),
                     partyViewModel = partyViewModel,
                     feedModeViewModel = feedModeViewModel,
+                    roomLobbyViewModel = roomLobbyViewModel,
                     profileViewModel = profileViewModel,
                     eventViewModel = eventViewModel,
                     homeViewModel = homeViewModel,
@@ -218,6 +227,7 @@ private fun DestinationContent(
     onNavigate: (Destination) -> Unit = {},
     partyViewModel: PartyViewModel,
     feedModeViewModel: FeedModeViewModel,
+    roomLobbyViewModel: RoomLobbyViewModel,
     profileViewModel: ProfileViewModel,
     eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
@@ -260,10 +270,15 @@ private fun DestinationContent(
     }
     if (destination == Destination.FeedScreen) {
         val feedState by feedModeViewModel.state.collectAsState()
+        if (feedState.stub?.title?.startsWith("FE-F04") == true) {
+            RoomLobbyScreen(roomLobbyViewModel, onBack = { feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) }, modifier = modifier)
+            return
+        }
         FeedModeScreen(
             state = feedState,
             onEvent = { event ->
                 if (event == FeedModeEvent.CompleteProfileSelected) onFeedProfileCompletionRequested()
+                if (event == FeedModeEvent.MultiDeviceSelected) roomLobbyViewModel.openCreate()
                 feedModeViewModel.onEvent(event)
             },
             modifier = modifier,

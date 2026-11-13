@@ -1,0 +1,20 @@
+# FE-F04 PM handoff
+
+- Worktree/branch: `.worktrees/FE-F04`, `codex/FE-F04`, based on supplied FE-F03 revision `75af8e33b6b7eb4eed3998ca99b5e8798598870f`. This is the requested sequential stack; it does not add a functional FE-F03 dependency.
+- Functional prerequisites per specification: FE-F01 and ready BE-D03 staging. Queue reports both prerequisites satisfied (FE-F01 PASS; BE-D03 PASS and end-to-end staging PASS).
+- Scope: Android only; `https://srastemsya.nixbi.ru`; emulator `emulator-5554`; package/activity `fefu.prime.srastem/.MainActivity`; never use catalog. Existing test session or `person1@example.test`, OTP `0427`; respect authentication cooldown. Contract archive: `/Users/nixbi/Downloads/srastemsya-frontend-api-2026-11-13.zip`. User-provided API domain and contract are authoritative.
+- Figma page 2: `https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-7618`; exact frames are `280-10707`, `280-10728`, `280-10751`.
+- FE-F02 room voting/swipe integration is deferred to room specs. Pool size is 10. FE-F04 step 4 room-filter submission and POST /rooms/{id}/start remain in scope; stop acceptance at the started room state (no room voting/swipe screen). AC-09 is an additive criterion; AC-01..08 remain unchanged.
+- Local ADB inspection hit sandbox restriction when trying to start the daemon (`Operation not permitted`). Retry SDK/emulator operations with the documented escalated path; this is not an application blocker unless escalation fails.
+- No backend service changes in scope. Developer must update the affected room feature `FEATURE.md` and the frontend screen docs. Developer source-level architecture evidence is required before Tester handoff.
+- User authorized a separate local commit only; no push or PR. This supersedes `workflow/config.json` PR setting for this task.
+
+## PM review and acceptance (2026-11-14)
+
+- Source-level evidence reviewed in `workflow/reports/FE-F04/dev_report.md`: FE layers and repository boundary, UI Kit/tokens, observer cancellation, idempotency, `RoomLobbyViewModelTest` 5/5; Android build and `:shared:testAndroid` successful. Updated APK SHA-256: `fd0eb39316f59ca141d2d5c80c4a24d85a4110994073712d8f0f88350692aa10`.
+- Documentation reviewed: `shared/src/commonMain/kotlin/fefu/prime/srastem/feed/FEATURE.md` and `docs/design/feed.md`. The stale room-stub statement was corrected. Checked the supplied API archive and local `docs/contracts/{mobile-api,discovery-v1}.md`; all FE-F04 endpoints are already contracted, with no backend/API interface changes required.
+- Independent Android runtime checkpoints and timestamped screenshots are in `workflow/reports/FE-F04/evidence/`. On the final APK both emulators showed the organizer lobby with two members, guest had no start action, room filters omitted participant count, start returned the visible status `Выбор начался · 10 вариантов в пуле`, and guest received the started state by polling within about 8 seconds. Existing-member invite re-entry returned the current lobby without increasing count. Invalid synthetic token displayed «Комната не найдена» and is not treated as expired-link evidence.
+- AC-09 initially failed because the room filter exposed an editable participant-count field. Developer fixed it to hide the field and send `partySize=null`; the independent two-device rerun passed on the updated APK.
+- User explicitly excluded waiting to retest the live 30-minute invite TTL (backend expiry has been tested separately). Therefore new-user live `410 INVITE_EXPIRED` and post-expiry existing-member re-entry are not claimed as runtime PASS. Developer's 410 mapping unit test is supplementary only. FE-F04 is scoped PASS with this explicit live-TTL exclusion.
+- Tester-owned `test_report.md` was not present at PM close. The timestamped screenshot evidence and Tester runtime checkpoints are preserved; this missing summary report is an artifact gap, not hidden or replaced by PM-authored tester claims.
+- Final state: Android-only, voting/swipe after room start deferred. No push or PR; the authorized outcome is a separate local commit.

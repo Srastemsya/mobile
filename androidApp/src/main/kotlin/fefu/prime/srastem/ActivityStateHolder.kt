@@ -11,6 +11,7 @@ class ActivityStateHolder : ViewModel() {
     val registration = container.createRegistrationViewModel()
     val party = container.createPartyViewModel()
     val feed = container.createFeedModeViewModel()
+    val roomLobby = container.createRoomLobbyViewModel()
     val profile = container.createProfileViewModel()
     val events = container.createEventViewModel()
     val home = container.createHomeViewModel()

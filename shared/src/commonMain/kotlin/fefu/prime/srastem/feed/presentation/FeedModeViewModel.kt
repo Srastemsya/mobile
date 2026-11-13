@@ -196,6 +196,8 @@ class FeedModeViewModel(
         )
     }
 
+    fun openRoomFromInvite() { _state.update { it.copy(stub = multiDeviceStub()) } }
+
     private fun multiDeviceStub(): FeedModeStub = FeedModeStub(
         title = "FE-F04 · Комната с друзьями",
         message = "Точка входа сценария «несколько устройств» зарезервирована: пакет FE-F04 ещё не реализован. " +

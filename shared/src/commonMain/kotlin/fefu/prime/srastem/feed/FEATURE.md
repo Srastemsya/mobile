@@ -7,7 +7,7 @@
 ## Бизнес-логика
 
 - Вкладка «Лента» таббара открывает экран «Выбираем вместе»; таббар виден только на нём, последующие шаги открываются поверх без таббара с кнопкой «Назад» в `SrTopBar`.
-- Карточка «На одном устройстве» (`Icon/user` → `SrIcon.Profile`) открывает фильтры FE-F01; карточка комнаты (`Icon/users` → `SrIcon.People`) пока ведёт в явную заглушку FE-F04.
+- Карточка «На одном устройстве» (`Icon/user` → `SrIcon.Profile`) открывает фильтры FE-F01; карточка комнаты (`Icon/users` → `SrIcon.People`) открывает создание комнаты FE-F04 на Android.
 - Вход «Свайпать события» с Главной открывает тот же экран с предвыбранным `kind=EVENT` (`MainViewModel.navigateToFeedWithEventsKind`); предвыбранный тип хранится в `FeedModeState.pendingKind` и пробрасывается в FE-F01 при выборе режима.
 - Сценарии ленты доступны только с завершённым профилем: при входе выполняется проверка `GET /v1/me profileComplete`; неполный профиль или `403 PROFILE_INCOMPLETE` автоматически открывает завершение регистрации (`RegistrationViewModel.openProfileCompletion`). Ошибка проверки блокирует выбор и предлагает повторить запрос.
 - Бюджет в фильтрах общий (`budgetTotalMinor`, копейки); цена карточки — на человека; проверку `price * partySize <= budgetTotal` выполняет сервер.
@@ -68,8 +68,8 @@
 
 ## Особенности реализации
 
-- Рефакторинг, а не переписывание: канонические типы вынесены из `party` в `feed/domain`; `party/data/BackendPartyRepository` больше не парсит контракт сам — query/тела строит `FeedContract`, DTO разбирает `FeedMappers`, проекции комнаты строятся из `RoomSnapshot`. Deeplink-приглашения (`srastem://…token=…`) сохранены: платформы открывают `Destination.RoomScreen` и вызывают `PartyViewModel.acceptInvite`.
-- FE-F04 остаётся явной заглушкой (`FeedModeStub`) до реализации комнаты.
+- Рефакторинг, а не переписывание: канонические типы вынесены из `party` в `feed/domain`; `party/data/BackendPartyRepository` больше не парсит контракт сам — query/тела строит `FeedContract`, DTO разбирает `FeedMappers`, проекции комнаты строятся из `RoomSnapshot`. Android deeplink-приглашения открывают `Destination.FeedScreen` и вызывают `RoomLobbyViewModel.acceptInvite`; iOS продолжает использовать старый `PartyViewModel` до отдельного пакета.
+- FE-F04 на Android использует `RoomLobbyViewModel` и `RoomLobbyScreen`: название, создание, выдача/копирование ссылки, вход по token, live-состав, комнатные фильтры без поля числа участников и старт. `FeedModeStub` служит только маркером шага для навигации и скрытия таббара; room voting UI отложен.
 - Проверка профиля при входе блокирует выбор при ошибке сети до успешного повтора. FE-F01 отображает ошибку загрузки категорий или кандидатов в состоянии экрана.
 - Платформенные отличия: liquid glass доступен на Android API 31+ и iOS с `UIVisualEffectView`; ниже — полупрозрачная заливка/`color/surface/solid` (см. `uikit/Glass.*`). Long polling использует socket timeout 35 c при `waitSeconds=25` контракта.
 - Известные ограничения: Android swipe-интерфейс подключён; FE-F04 ещё не поставляет комнатный контекст, поэтому `contextLabel` остаётся значением по умолчанию до интеграции. FE-F03 запрашивает следующую API-страницу одиночной выдачи по сохранённым фильтрам и `nextCursor`, когда текущие кандидаты пропущены; FE-F05 отвечает за обновление раунда комнаты и реализуется отдельно.
@@ -79,3 +79,7 @@
 - `shared/src/commonTest/kotlin/fefu/prime/srastem/feed/domain/FeedUseCasesTest.kt` — use cases: выдача с курсором и фильтрами, преобразование ошибок; делегирование операций комнаты.
 - `shared/src/commonTest/kotlin/fefu/prime/srastem/feed/presentation/FeedModeViewModelTest.kt` — ViewModel: вход и гейт профиля, фильтры, первый лайк сразу открывает выбранный результат без запроса следующей страницы, пропуск десяти кандидатов автоматически запрашивает `nextCursor` и сбрасывает позицию.
 - `shared/src/commonTest/kotlin/fefu/prime/srastem/feed/data/FeedMappersTest.kt` — маппинг DTO деталей каталога для обёртки места `{card, description}` и DTO события; маппинг комнаты, ошибок контракта, параметров query и тела `start`.
+
+## FE-F04 Android
+
+`RoomLobbyViewModel` использует `CreateRoomUseCase`, `CreateInviteUseCase`, `JoinRoomUseCase`, `ObserveRoomUseCase`, `StartRoomUseCase`. Состояние `RoomLobbyState` хранит snapshot, ссылку, признак владельца, фильтры, статус копирования и ошибки; действия `openCreate`, `create`, `acceptInvite`, `issueInvite`, `openFilters`, `start`, `leave` управляют сценарием. `BackendRoomRepository` обслуживает `POST /v1/rooms`, `POST /v1/rooms/{id}/invites`, `POST /v1/room-invites/join`, `POST /v1/rooms/{id}/start`, `GET /v1/rooms/{id}`. При уходе из лобби observation отменяется. Сервер ограничивает комнатный пул 10 карточками по `lobby-v2.md` из контрактного архива. Старт отображает число кандидатов; голосование и свайпы комнаты относятся к следующим пакетам.

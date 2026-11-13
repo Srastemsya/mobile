@@ -98,6 +98,15 @@ class AppContainer(
         getCatalogDetails = GetCatalogDetailsUseCase(feedRepository),
     )
 
+    fun createRoomLobbyViewModel() = fefu.prime.srastem.feed.presentation.RoomLobbyViewModel(
+        fefu.prime.srastem.feed.domain.CreateRoomUseCase(roomRepository),
+        fefu.prime.srastem.feed.domain.CreateInviteUseCase(roomRepository),
+        fefu.prime.srastem.feed.domain.JoinRoomUseCase(roomRepository),
+        fefu.prime.srastem.feed.domain.ObserveRoomUseCase(roomRepository),
+        fefu.prime.srastem.feed.domain.StartRoomUseCase(roomRepository),
+        api::userId,
+    )
+
     fun createProfileViewModel() = ProfileViewModel(profileRepository)
 
     fun createEventViewModel() = EventViewModel(EventUseCases(eventRepository))
