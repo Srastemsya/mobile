@@ -24,12 +24,12 @@
 
 | Пакет | Зависимости по спецификации | Статус | Причина |
 |---|---|---|---|
-| FE-F00 | — | PENDING | Не запускался. |
-| FE-F01 | FE-F00 | PENDING | Не запускался. |
-| FE-F02 | FE-F01 | PENDING | Не запускался. |
-| FE-F03 | FE-F02, стенд BE-D03 | PENDING | Не запускался. |
-| FE-F04 | FE-F01, стенд BE-D03 | PENDING | Не запускался. |
-| FE-F05 | FE-F02, FE-F04 | PENDING | Не запускался. |
-| FE-F06 | FE-F03, FE-F05 | PENDING | Не запускался. |
+| FE-F00 | — | BLOCKED | Сборки Android/iOS прошли; UI приёмка не завершена: недоступен Android runtime и управляемый Simulator UI. См. [test report](FE-F00/test_report.md) и [PM handoff](FE-F00/pm_handoff.md).
+| FE-F01 | FE-F00 | BLOCKED | FE-F00 заблокирован до доступности Android runtime и управляемого iOS Simulator UI; зависимость не закрыта. |
+| FE-F02 | FE-F01 | BLOCKED | FE-F01 заблокирован зависимостью от FE-F00. |
+| FE-F03 | FE-F02, стенд BE-D03 | BLOCKED | FE-F02 заблокирован по цепочке от FE-F00. |
+| FE-F04 | FE-F01, стенд BE-D03 | BLOCKED | FE-F01 заблокирован зависимостью от FE-F00. |
+| FE-F05 | FE-F02, FE-F04 | BLOCKED | FE-F02 и FE-F04 заблокированы по цепочке от FE-F00. |
+| FE-F06 | FE-F03, FE-F05 | BLOCKED | FE-F03 и FE-F05 заблокированы по цепочке от FE-F00. |
 
 Источник порядка и зависимостей — [спецификация ленты](../../docs/specs/feed-v1/README.md). Спеки пакетов — `workflow/specs/feed-v1/`. Для запуска этой очереди переключить `spec_dir` в config.json на `workflow/specs/feed-v1`.

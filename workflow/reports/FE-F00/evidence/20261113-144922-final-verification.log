@@ -1,0 +1,18 @@
+# FE-F00 final verification — 2026-11-13 14:49:22 +10
+revision: 3447a081ccd672a6e09790634b0984a57fa4a923 branch: fe-f00
+
+## ./gradlew :shared:allTests --rerun-tasks
+> Task :shared:testAndroidHostTest
+> Task :shared:iosSimulatorArm64Test
+> Task :shared:allTests
+BUILD SUCCESSFUL in 16s
+exit=0
+
+## ./gradlew :androidApp:assembleDebug
+BUILD SUCCESSFUL in 582ms
+
+## ./gradlew :shared:compileKotlinIosArm64 :shared:compileKotlinIosSimulatorArm64
+BUILD SUCCESSFUL in 537ms
+
+## xcodebuild iosApp simulator (see 20261113-144645-ios-build.log)
+# finished 2026-11-13 14:49:41 +10
