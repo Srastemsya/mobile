@@ -27,7 +27,6 @@ fun BottomNavigationBar(
         SrTabBar(
             selected = selectedDestination.toSrTab(),
             onSelect = { onNavigate(it.toDestination()) },
-            tabs = listOf(SrTab.Home, SrTab.Map, SrTab.Events, SrTab.Profile),
         )
     }
 }
@@ -35,7 +34,7 @@ fun BottomNavigationBar(
 private fun Destination.toSrTab(): SrTab = when (this) {
     Destination.MainScreen -> SrTab.Home
     Destination.MapScreen -> SrTab.Map
-    Destination.FeedScreen -> SrTab.Events
+    Destination.FeedScreen -> SrTab.Feed
     Destination.RoomScreen, Destination.AiScreen -> SrTab.Events
     Destination.EventsScreen -> SrTab.Events
     Destination.Profile -> SrTab.Profile

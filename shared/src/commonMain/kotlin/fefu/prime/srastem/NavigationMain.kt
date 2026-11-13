@@ -24,6 +24,9 @@ import fefu.prime.srastem.onboarding.presentation.OnboardingViewModel
 import fefu.prime.srastem.registration.presentation.RegistrationScreen
 import fefu.prime.srastem.registration.presentation.RegistrationViewModel
 import fefu.prime.srastem.map.presentation.MapScreen
+import fefu.prime.srastem.feed.presentation.FeedModeScreen
+import fefu.prime.srastem.feed.presentation.FeedModeViewModel
+import fefu.prime.srastem.feed.presentation.FeedModeEvent
 import fefu.prime.srastem.party.presentation.PartyScreen
 import fefu.prime.srastem.party.presentation.PartyViewModel
 import fefu.prime.srastem.profile.presentation.ProfileScreen
@@ -47,6 +50,7 @@ fun NavigationMain(
     onboardingViewModel: OnboardingViewModel,
     registrationViewModel: RegistrationViewModel,
     partyViewModel: PartyViewModel,
+    feedModeViewModel: FeedModeViewModel,
     profileViewModel: ProfileViewModel,
     eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
@@ -61,6 +65,7 @@ fun NavigationMain(
             homeViewModel.refresh()
             eventViewModel.refreshEvents()
             mapCatalogViewModel.refresh()
+            feedModeViewModel.onRegistrationCompleted()
         }
     }
 
@@ -96,15 +101,35 @@ fun NavigationMain(
                 onBack = registrationViewModel::onBack,
             )
 
-            else -> MainNavigation(viewModel, partyViewModel, profileViewModel, eventViewModel, homeViewModel, mapCatalogViewModel)
+            else -> MainNavigation(
+                viewModel,
+                partyViewModel,
+                feedModeViewModel,
+                profileViewModel,
+                eventViewModel,
+                homeViewModel,
+                mapCatalogViewModel,
+                onFeedProfileCompletionRequested = registrationViewModel::openProfileCompletion,
+            )
         }
     }
 }
 
 @Composable
-private fun MainNavigation(viewModel: MainViewModel, partyViewModel: PartyViewModel, profileViewModel: ProfileViewModel, eventViewModel: EventViewModel, homeViewModel: HomeViewModel, mapCatalogViewModel: MapCatalogViewModel) {
+private fun MainNavigation(
+    viewModel: MainViewModel,
+    partyViewModel: PartyViewModel,
+    feedModeViewModel: FeedModeViewModel,
+    profileViewModel: ProfileViewModel,
+    eventViewModel: EventViewModel,
+    homeViewModel: HomeViewModel,
+    mapCatalogViewModel: MapCatalogViewModel,
+    onFeedProfileCompletionRequested: () -> Unit = {},
+) {
     val currentDestination by viewModel.currentDestination.collectAsState()
+    val feedEventsEntry by viewModel.feedEventsEntry.collectAsState()
     val partyState by partyViewModel.state.collectAsState()
+    val feedState by feedModeViewModel.state.collectAsState()
     val profileState by profileViewModel.state.collectAsState()
     val eventState by eventViewModel.state.collectAsState()
     val eventListUnderGlass = currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
@@ -112,6 +137,16 @@ private fun MainNavigation(viewModel: MainViewModel, partyViewModel: PartyViewMo
     LaunchedEffect(currentDestination, eventState.page) {
         if (currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST) {
             eventViewModel.refreshEvents()
+        }
+    }
+
+    // AC-05: вход с Главной («Свайпать события») открывает выбор режима с предвыбранным kind=EVENT;
+    // вход вкладкой «Лента» сбрасывает предвыбранный тип.
+    LaunchedEffect(currentDestination, feedEventsEntry) {
+        if (currentDestination == Destination.FeedScreen) {
+            feedModeViewModel.onEvent(
+                if (feedEventsEntry) FeedModeEvent.OpenedWithEventsKind else FeedModeEvent.OpenedFromTab,
+            )
         }
     }
 
@@ -136,14 +171,19 @@ private fun MainNavigation(viewModel: MainViewModel, partyViewModel: PartyViewMo
                     onNavigate = viewModel::navigateTo,
                     modifier = Modifier.fillMaxSize(),
                     partyViewModel = partyViewModel,
+                    feedModeViewModel = feedModeViewModel,
                     profileViewModel = profileViewModel,
                     eventViewModel = eventViewModel,
                     homeViewModel = homeViewModel,
                     mapCatalogViewModel = mapCatalogViewModel,
+                    onOpenFeedWithEventsKind = viewModel::navigateToFeedWithEventsKind,
+                    onFeedProfileCompletionRequested = onFeedProfileCompletionRequested,
                 )
             }
+            // AC-03: таббар виден только на экране выбора режима ленты; последующие шаги
+            // (заглушки FE-F01/FE-F04, шаги комнаты) открываются поверх без таббара.
             val showBottomNavigation = currentDestination != Destination.MapScreen &&
-                (currentDestination != Destination.FeedScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE) &&
+                (currentDestination != Destination.FeedScreen || feedState.stub == null) &&
                 (currentDestination != Destination.Profile || profileState.page == ProfilePage.HOME) &&
                 (currentDestination != Destination.EventsScreen || eventState.page == EventPage.LIST) &&
                 (currentDestination != Destination.RoomScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE)
@@ -163,10 +203,13 @@ private fun DestinationContent(
     destination: Destination,
     onNavigate: (Destination) -> Unit = {},
     partyViewModel: PartyViewModel,
+    feedModeViewModel: FeedModeViewModel,
     profileViewModel: ProfileViewModel,
     eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
     mapCatalogViewModel: MapCatalogViewModel,
+    onOpenFeedWithEventsKind: () -> Unit = {},
+    onFeedProfileCompletionRequested: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     if (destination == Destination.MapScreen) {
@@ -195,20 +238,21 @@ private fun DestinationContent(
         HomeScreen(
             homeViewModel,
             modifier = modifier,
-            onOpenFeed = { onNavigate(Destination.FeedScreen) },
+            onOpenFeed = onOpenFeedWithEventsKind,
             onOpenEvents = { onNavigate(Destination.EventsScreen) },
             onOpenMap = { onNavigate(Destination.MapScreen) },
         )
         return
     }
     if (destination == Destination.FeedScreen) {
-        PartyScreen(
-            viewModel = partyViewModel,
-            onOpenEvent = { id ->
-                eventViewModel.openEvent(id)
-                onNavigate(Destination.EventsScreen)
+        val feedState by feedModeViewModel.state.collectAsState()
+        FeedModeScreen(
+            state = feedState,
+            onEvent = { event ->
+                if (event == FeedModeEvent.CompleteProfileSelected) onFeedProfileCompletionRequested()
+                feedModeViewModel.onEvent(event)
             },
-            onOpenPlace = { onNavigate(Destination.MapScreen) },
+            modifier = modifier,
         )
         return
     }
