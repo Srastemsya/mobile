@@ -134,6 +134,17 @@ private fun MainNavigation(
     val eventState by eventViewModel.state.collectAsState()
     val eventListUnderGlass = currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
 
+    FeedBackHandler(enabled = currentDestination == Destination.FeedScreen) {
+        if (feedState.stub != null) feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+        else viewModel.backFromFeed()
+    }
+
+    LaunchedEffect(currentDestination, feedState.profileIncomplete) {
+        if (currentDestination == Destination.FeedScreen && feedState.profileIncomplete) {
+            onFeedProfileCompletionRequested()
+        }
+    }
+
     LaunchedEffect(currentDestination, eventState.page) {
         if (currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST) {
             eventViewModel.refreshEvents()

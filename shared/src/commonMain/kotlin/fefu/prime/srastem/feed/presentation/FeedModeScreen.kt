@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import ru.srastemsya.uikit.SrButton
 import ru.srastemsya.uikit.SrButtonStyle
 import ru.srastemsya.uikit.SrColors
+import ru.srastemsya.uikit.SrChoiceSurface
 import ru.srastemsya.uikit.SrGlyph
 import ru.srastemsya.uikit.SrIcon
 import ru.srastemsya.uikit.SrShapes
@@ -83,7 +84,7 @@ fun FeedModeScreen(
                     busy = state.busy,
                     onCompleteProfile = { onEvent(FeedModeEvent.CompleteProfileSelected) },
                 )
-            } else {
+            } else if (state.error == null) {
                 ModeChoiceCard(
                     icon = SrIcon.Profile,
                     title = "На одном устройстве",
@@ -101,7 +102,7 @@ fun FeedModeScreen(
             }
             state.error?.let { message ->
                 Text(message, style = SrType.Label, color = SrColors.Error)
-                SrButton("Понятно", { onEvent(FeedModeEvent.DismissNotice) }, style = SrButtonStyle.Secondary)
+                SrButton("Повторить", { onEvent(FeedModeEvent.RetryProfileCheck) }, style = SrButtonStyle.Secondary)
             }
             if (state.busy) {
                 CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally), color = SrColors.Primary)
@@ -156,20 +157,16 @@ private fun ModeChoiceCard(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Column(
-        Modifier.fillMaxWidth()
-            .clip(SrShapes.Card)
-            .background(SrColors.Glass)
-            .border(1.dp, SrColors.GlassEdge, SrShapes.Card)
-            .clickable(enabled, role = Role.Button, onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    SrChoiceSurface(
+        modifier = Modifier.fillMaxWidth().clickable(enabled, role = Role.Button, onClick = onClick),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            SrGlyph(icon, tint = SrColors.Text)
-            Text(title, style = SrType.Title, color = SrColors.Text)
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                SrGlyph(icon, tint = SrColors.Text)
+                Text(title, style = SrType.Title, color = SrColors.Text)
+            }
+            Text(description, style = SrType.Body, color = SrColors.Muted)
         }
-        Text(description, style = SrType.Body, color = SrColors.Muted)
     }
 }
 

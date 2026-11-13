@@ -1,5 +1,7 @@
 package fefu.prime.srastem.feed.presentation
 
+import fefu.prime.srastem.feed.domain.CheckFeedAccessUseCase
+import fefu.prime.srastem.feed.domain.FeedAccessRepository
 import fefu.prime.srastem.feed.domain.FeedError
 import fefu.prime.srastem.feed.domain.FeedKind
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,9 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedModeViewModelTest {
+    private fun vm(gate: suspend () -> Boolean) = FeedModeViewModel(CheckFeedAccessUseCase(object : FeedAccessRepository {
+        override suspend fun isProfileComplete(): Boolean = gate()
+    }))
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -32,7 +37,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun tabEntryResetsPendingKindToPlaces() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
 
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
@@ -42,7 +47,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun homeSwipeEntryPreselectsEventsKind() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
 
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
 
@@ -51,7 +56,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun incompleteProfileBlocksModeCards() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { false })
+        val viewModel = vm { false }
 
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
         assertTrue(viewModel.state.value.profileIncomplete)
@@ -62,7 +67,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun profileIncompleteErrorFromScenariosOpensCompletionGate() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
         viewModel.onError(FeedError.ProfileIncomplete())
@@ -71,25 +76,25 @@ class FeedModeViewModelTest {
         assertNull(viewModel.state.value.stub)
 
         viewModel.onEvent(FeedModeEvent.CompleteProfileSelected)
-        assertFalse(viewModel.state.value.profileIncomplete)
+        assertTrue(viewModel.state.value.profileIncomplete)
     }
 
     @Test
-    fun transportErrorSurfacesMessageWithoutBlockingModes() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+    fun transportErrorCanBeRetried() = runTest {
+        val viewModel = vm { true }
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
         viewModel.onError(FeedError.Transport("Сервер недоступен"))
 
         assertEquals("Сервер недоступен", viewModel.state.value.error)
         assertFalse(viewModel.state.value.profileIncomplete)
-        viewModel.onEvent(FeedModeEvent.DismissNotice)
+        viewModel.onEvent(FeedModeEvent.RetryProfileCheck)
         assertNull(viewModel.state.value.error)
     }
 
     @Test
     fun modeCardsOpenDocumentedStubsAndBackReturnsToChoice() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
 
         viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)
@@ -109,7 +114,7 @@ class FeedModeViewModelTest {
     @Test
     fun registrationCompletionRechecksGateWithoutLosingPendingKind() = runTest {
         var complete = false
-        val viewModel = FeedModeViewModel(profileGate = { complete })
+        val viewModel = vm { complete }
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
         assertTrue(viewModel.state.value.profileIncomplete)
 
@@ -121,13 +126,18 @@ class FeedModeViewModelTest {
     }
 
     @Test
-    fun unavailableGateFailsOpenAndReactive403StillProtects() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { error("offline") })
+    fun unavailableGateBlocksUntilRetry() = runTest {
+        var available = false
+        val viewModel = vm { if (!available) error("offline") else true }
 
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
-        assertFalse(viewModel.state.value.profileIncomplete)
-        viewModel.onError(FeedError.ProfileIncomplete())
-        assertTrue(viewModel.state.value.profileIncomplete)
+        assertNotNull(viewModel.state.value.error)
+        viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)
+        assertNull(viewModel.state.value.stub)
+        available = true
+        viewModel.onEvent(FeedModeEvent.RetryProfileCheck)
+        viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)
+        assertNotNull(viewModel.state.value.stub)
     }
 }

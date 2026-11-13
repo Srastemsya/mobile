@@ -87,7 +87,9 @@ class AppContainer(
      * `GET /v1/me profileComplete` того же репозитория, что использует поток регистрации.
      */
     fun createFeedModeViewModel() = FeedModeViewModel(
-        profileGate = { GetRegistrationCompleted(registrationRepository)() },
+        profileGate = fefu.prime.srastem.feed.domain.CheckFeedAccessUseCase(
+            fefu.prime.srastem.feed.data.BackendFeedAccessRepository(api),
+        ),
     )
 
     fun createProfileViewModel() = ProfileViewModel(profileRepository)

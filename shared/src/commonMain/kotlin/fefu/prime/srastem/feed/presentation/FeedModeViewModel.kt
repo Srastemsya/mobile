@@ -2,6 +2,7 @@ package fefu.prime.srastem.feed.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fefu.prime.srastem.feed.domain.CheckFeedAccessUseCase
 import fefu.prime.srastem.feed.domain.FeedError
 import fefu.prime.srastem.feed.domain.FeedKind
 import kotlinx.coroutines.CancellationException
@@ -11,16 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel экрана «Выбираем вместе» (FE-F00).
- *
- * [profileGate] — проверка завершённости профиля до входа в сценарии ленты
- * (AC-06): незавершённый профиль блокирует карточки режимов и ведёт на
- * завершение регистрации. `null` означает «проверка недоступна» (fail-open):
- * реактивную защиту даёт маппинг `403 PROFILE_INCOMPLETE` в [FeedError.ProfileIncomplete].
- */
 class FeedModeViewModel(
-    private val profileGate: (suspend () -> Boolean)? = null,
+    private val profileGate: CheckFeedAccessUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FeedModeState())
@@ -33,10 +26,11 @@ class FeedModeViewModel(
             FeedModeEvent.SingleDeviceSelected -> selectMode(singleDeviceStub())
             FeedModeEvent.MultiDeviceSelected -> selectMode(multiDeviceStub())
             FeedModeEvent.DismissNotice -> _state.update {
-                it.copy(stub = null, error = null)
+                it.copy(stub = null)
             }
+            FeedModeEvent.RetryProfileCheck -> checkProfile()
             FeedModeEvent.CompleteProfileSelected -> _state.update {
-                it.copy(profileIncomplete = false, busy = false)
+                it
             }
         }
     }
@@ -63,22 +57,20 @@ class FeedModeViewModel(
 
     private fun selectMode(stub: FeedModeStub) {
         val current = _state.value
-        if (current.profileIncomplete || current.busy) return
+        if (current.profileIncomplete || current.busy || current.error != null) return
         _state.update { it.copy(stub = stub, error = null) }
     }
 
     private fun checkProfile() {
-        val gate = profileGate ?: return
+        _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            _state.update { it.copy(busy = true) }
             try {
-                val complete = gate()
+                val complete = profileGate().getOrThrow()
                 _state.update { it.copy(busy = false, profileIncomplete = !complete) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                // Проверка недоступна (офлайн): не блокируем вход, реактивную защиту даёт 403 PROFILE_INCOMPLETE.
-                _state.update { it.copy(busy = false) }
+                _state.update { it.copy(busy = false, error = "Не удалось проверить профиль. Повторите попытку.") }
             }
         }
     }

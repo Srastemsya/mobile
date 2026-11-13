@@ -18,5 +18,7 @@ sealed interface FeedModeEvent {
     data object DismissNotice : FeedModeEvent
 
     /** `403 PROFILE_INCOMPLETE`: пользователь ушёл завершать регистрацию. */
+    data object RetryProfileCheck : FeedModeEvent
+
     data object CompleteProfileSelected : FeedModeEvent
 }

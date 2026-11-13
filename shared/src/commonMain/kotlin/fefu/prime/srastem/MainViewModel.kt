@@ -17,12 +17,18 @@ class MainViewModel : ViewModel() {
     private val _feedEventsEntry = MutableStateFlow(false)
     val feedEventsEntry: StateFlow<Boolean> = _feedEventsEntry.asStateFlow()
 
+    private var beforeFeed: Destination = Destination.MainScreen
+
     fun navigateTo(destination: Destination) {
+        if (destination == Destination.FeedScreen && _currentDestination.value != destination) beforeFeed = _currentDestination.value
         if (destination != Destination.FeedScreen) _feedEventsEntry.value = false
         _currentDestination.value = destination
     }
 
+    fun backFromFeed() = navigateTo(beforeFeed)
+
     fun navigateToFeedWithEventsKind() {
+        if (_currentDestination.value != Destination.FeedScreen) beforeFeed = _currentDestination.value
         _feedEventsEntry.value = true
         _currentDestination.value = Destination.FeedScreen
     }
