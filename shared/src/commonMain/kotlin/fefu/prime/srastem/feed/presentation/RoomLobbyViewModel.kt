@@ -1,5 +1,6 @@
 package fefu.prime.srastem.feed.presentation
 
+import io.ktor.http.decodeURLQueryComponent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fefu.prime.srastem.feed.domain.*
@@ -88,6 +89,7 @@ class RoomLobbyViewModel(
     }
     fun acceptInvite(link: String) {
         val token = Regex("(?:[?&]token=)([^&#]+)").find(link)?.groupValues?.get(1)
+            ?.let { encoded -> runCatching { encoded.decodeURLQueryComponent() }.getOrNull() }
             ?: link.takeIf { it.isNotBlank() && !it.contains("://") }
         observation?.cancel()
         _state.value = RoomLobbyState(ownUserId = ownUserId(), busy = true, joined = true)

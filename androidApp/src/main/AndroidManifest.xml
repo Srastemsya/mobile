@@ -25,12 +25,18 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="srastem" android:host="party" />
             </intent-filter>
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-            <data android:scheme="srastemsya" android:host="room-invites" android:path="/join" />
-        </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="srastemsya" android:host="room-invites" android:path="/join" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="srastemsya.nixbi.ru" android:path="/room-invites/join" />
+            </intent-filter>
         </activity>
     </application>
 
