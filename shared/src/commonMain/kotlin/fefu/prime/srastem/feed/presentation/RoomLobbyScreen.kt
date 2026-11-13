@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -14,17 +15,32 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import ru.srastemsya.uikit.*
 import fefu.prime.srastem.feed.domain.RoomPhase
-import fefu.prime.srastem.feed.domain.SwipeDecision
 
 @Composable
 fun RoomLobbyScreen(
     viewModel: RoomLobbyViewModel,
     onBack: () -> Unit,
+    onGoHome: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
     val clipboard = LocalClipboardManager.current
     val room = state.room
+    LaunchedEffect(room?.phase, room?.winner) {
+        if (room?.phase == RoomPhase.MATCHED &&
+            room.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE &&
+            state.catalogDetails == null && !state.busy
+        ) viewModel.openWinner()
+    }
+    state.catalogDetails?.let { details ->
+        FeedCatalogDetailsScreen(
+            details = details,
+            onBack = viewModel::closeWinner,
+            onGoHome = onGoHome,
+            modifier = modifier,
+        )
+        return
+    }
     if (room?.phase == RoomPhase.VOTING && !room.myFinished) {
         RoomVotingScreen(
             state = state,
@@ -48,14 +64,7 @@ fun RoomLobbyScreen(
                     viewModel.leave(); onBack()
                 }
             })
-        if (state.catalogDetails != null) {
-            val details = state.catalogDetails!!
-            Text(details.title, style = SrType.Display, color = SrColors.Text)
-            Text(details.description, style = SrType.Body, color = SrColors.Text)
-            Text(details.address, style = SrType.Body, color = SrColors.Muted)
-            Text(details.priceLabel, style = SrType.Label, color = SrColors.Muted)
-            SrButton("Назад к матчу", viewModel::closeWinner, Modifier.fillMaxWidth())
-        } else if (state.filtersOpen) {
+        if (state.filtersOpen) {
             Text("Что ищем?", style = SrType.Display, color = SrColors.Text)
             Text(
                 "Организатор задаёт фильтры для всей комнаты.",
@@ -185,14 +194,7 @@ fun RoomLobbyScreen(
                         Modifier.fillMaxWidth(),
                         size = SrVoteCardSize.Tall,
                         description = card.description.takeIf { it.isNotBlank() })
-                    SrVoteActions(
-                        onPass = { viewModel.vote(SwipeDecision.SKIP) },
-                        onLike = { viewModel.vote(SwipeDecision.LIKE) },
-                        onUndo = if (state.voteIndex > 0) viewModel::previous else null,
-                        progress = (state.voteIndex + 1).toFloat() / room.candidates.size.coerceAtLeast(
-                            1
-                        )
-                    )
+                    VoteDirectionHint()
                 }
             }
         } else if (room.phase == RoomPhase.REFRESHING) {
@@ -210,11 +212,12 @@ fun RoomLobbyScreen(
                 color = SrColors.Text
             )
             SrButton(
-                if (room.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "К мероприятию" else "К месту",
+                if (room.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "О событии" else "О месте",
                 viewModel::openWinner,
                 Modifier.fillMaxWidth(),
                 loading = state.busy
             )
+            SrButton("На главный экран", onGoHome, Modifier.fillMaxWidth())
         } else if (room.phase == RoomPhase.CLOSED || room.phase == RoomPhase.EXHAUSTED) {
             Text(
                 if (room.phase == RoomPhase.CLOSED) "Комната закрыта" else "Больше вариантов нет",

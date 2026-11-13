@@ -18,13 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import fefu.prime.srastem.feed.domain.FeedKind
 import fefu.prime.srastem.feed.domain.RoomSnapshot
-import fefu.prime.srastem.feed.domain.SwipeDecision
 import ru.srastemsya.uikit.SrAvatarGroup
 import ru.srastemsya.uikit.SrButton
 import ru.srastemsya.uikit.SrColors
 import ru.srastemsya.uikit.SrTopBar
 import ru.srastemsya.uikit.SrType
-import ru.srastemsya.uikit.SrVoteActions
 
 @Composable
 internal fun RoomVotingScreen(
@@ -79,13 +77,7 @@ internal fun RoomVotingScreen(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 onSwipe = viewModel::vote,
             )
-            SrVoteActions(
-                onPass = { viewModel.vote(SwipeDecision.SKIP) },
-                onLike = { viewModel.vote(SwipeDecision.LIKE) },
-                onUndo = if (state.voteIndex > 0) viewModel::previous else null,
-                progress = (state.voteIndex + 1).toFloat() /
-                    room.candidates.size.coerceAtLeast(1),
-            )
+            VoteDirectionHint()
         } else {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 if (state.busy) CircularProgressIndicator(color = SrColors.Primary)

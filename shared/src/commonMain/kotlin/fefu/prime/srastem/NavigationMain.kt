@@ -135,6 +135,7 @@ private fun MainNavigation(
     val feedEventsEntry by viewModel.feedEventsEntry.collectAsState()
     val partyState by partyViewModel.state.collectAsState()
     val feedState by feedModeViewModel.state.collectAsState()
+    val roomState by roomLobbyViewModel.state.collectAsState()
     val profileState by profileViewModel.state.collectAsState()
     val eventState by eventViewModel.state.collectAsState()
     val eventListUnderGlass =
@@ -175,6 +176,32 @@ private fun MainNavigation(
         }
     }
 
+    LaunchedEffect(
+        currentDestination,
+        feedState.chosen?.ref,
+        roomState.room?.phase,
+        roomState.room?.winner,
+        feedState.stub?.title,
+    ) {
+        val selectedEvent = when {
+            currentDestination == Destination.FeedScreen && feedState.chosen?.ref?.kind ==
+                fefu.prime.srastem.feed.domain.FeedKind.EVENT -> feedState.chosen?.ref
+
+            currentDestination == Destination.FeedScreen &&
+                feedState.stub?.title?.startsWith("FE-F04") == true &&
+                roomState.room?.phase == fefu.prime.srastem.feed.domain.RoomPhase.MATCHED &&
+                roomState.room!!.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT ->
+                roomState.room!!.winner
+
+            else -> null
+        }
+        selectedEvent?.let { ref ->
+            feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+            eventViewModel.openEvent(ref.id, returnHomeAfterSelection = true)
+            viewModel.navigateTo(Destination.EventsScreen)
+        }
+    }
+
     SrGlassHost(
         background = {
             Box(Modifier.fillMaxSize().background(SrColors.Base)) {
@@ -204,6 +231,11 @@ private fun MainNavigation(
                     mapCatalogViewModel = mapCatalogViewModel,
                     onOpenFeedWithEventsKind = viewModel::navigateToFeedWithEventsKind,
                     onFeedProfileCompletionRequested = onFeedProfileCompletionRequested,
+                    onGoHome = {
+                        feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+                        roomLobbyViewModel.leave()
+                        viewModel.navigateTo(Destination.MainScreen)
+                    },
                 )
             }
             // AC-03: таббар виден только на экране выбора режима ленты; последующие шаги
@@ -237,6 +269,7 @@ private fun DestinationContent(
     mapCatalogViewModel: MapCatalogViewModel,
     onOpenFeedWithEventsKind: () -> Unit = {},
     onFeedProfileCompletionRequested: () -> Unit = {},
+    onGoHome: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     if (destination == Destination.MapScreen) {
@@ -283,6 +316,7 @@ private fun DestinationContent(
             RoomLobbyScreen(
                 roomLobbyViewModel,
                 onBack = { feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) },
+                onGoHome = onGoHome,
                 modifier = modifier
             )
             return
@@ -294,6 +328,7 @@ private fun DestinationContent(
                 if (event == FeedModeEvent.MultiDeviceSelected) roomLobbyViewModel.openCreate()
                 feedModeViewModel.onEvent(event)
             },
+            onGoHome = onGoHome,
             modifier = modifier,
         )
         return
@@ -309,7 +344,12 @@ private fun DestinationContent(
         EventScreen(
             eventViewModel,
             modifier = modifier,
-            onOpenMap = { onNavigate(Destination.MapScreen) })
+            onOpenMap = { onNavigate(Destination.MapScreen) },
+            onGoHome = {
+                eventViewModel.back()
+                onGoHome()
+            },
+        )
         return
     }
     if (destination == Destination.RoomScreen) {

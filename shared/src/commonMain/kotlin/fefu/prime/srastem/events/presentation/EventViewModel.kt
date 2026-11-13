@@ -29,6 +29,7 @@ data class EventUiState(
     val pendingParticipant: EventParticipant? = null,
     val isBusy: Boolean = false,
     val error: String? = null,
+    val returnHomeAfterSelection: Boolean = false,
 )
 
 class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
@@ -42,8 +43,13 @@ class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
         }
     }
 
-    fun openEvent(id: String) = _state.update {
-        it.copy(page = EventPage.DETAIL, selectedEventId = id, error = null)
+    fun openEvent(id: String, returnHomeAfterSelection: Boolean = false) = _state.update {
+        it.copy(
+            page = EventPage.DETAIL,
+            selectedEventId = id,
+            error = null,
+            returnHomeAfterSelection = returnHomeAfterSelection,
+        )
     }.also {
         viewModelScope.launch {
             try {
@@ -151,7 +157,8 @@ class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
                 EventPage.DETAIL -> state.copy(
                     page = EventPage.LIST,
                     selectedEventId = null,
-                    error = null
+                    error = null,
+                    returnHomeAfterSelection = false,
                 )
 
                 EventPage.CREATE_LOCATION -> state.copy(page = EventPage.LIST, error = null)

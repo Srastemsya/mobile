@@ -6,9 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -121,5 +123,14 @@ internal fun FeedCardCover(url: String?, title: String, modifier: Modifier = Mod
                 },
             )
         }
+    }
+}
+
+@Composable
+internal fun VoteDirectionHint(modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth()) {
+        androidx.compose.material3.Text("← Нет", color = SrColors.Muted)
+        Spacer(Modifier.weight(1f))
+        androidx.compose.material3.Text("Да →", color = SrColors.Primary)
     }
 }

@@ -68,6 +68,7 @@ fun EventScreen(
     viewModel: EventViewModel,
     modifier: Modifier = Modifier,
     onOpenMap: () -> Unit = {},
+    onGoHome: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val event = state.events.firstOrNull { it.id == state.selectedEventId }
@@ -79,7 +80,7 @@ fun EventScreen(
     ) {
         when (state.page) {
             EventPage.LIST -> EventListPage(state, viewModel)
-            EventPage.DETAIL -> event?.let { EventDetailsPage(it, state, viewModel, onOpenMap) }
+            EventPage.DETAIL -> event?.let { EventDetailsPage(it, state, viewModel, onOpenMap, onGoHome) }
                 ?: EventListPage(state, viewModel)
 
             EventPage.CREATE_LOCATION -> CreateLocationPage(viewModel)
@@ -190,7 +191,8 @@ private fun EventDetailsPage(
     event: SrEvent,
     state: EventUiState,
     vm: EventViewModel,
-    onOpenMap: () -> Unit
+    onOpenMap: () -> Unit,
+    onGoHome: () -> Unit,
 ) {
     val isOrganizer = event.organizerId == state.currentUserId
     val isParticipant = event.isAttending || event.participants.any { it.id == state.currentUserId }
@@ -264,6 +266,10 @@ private fun EventDetailsPage(
                 enabled = !state.isBusy && event.canRegister && !event.isFull,
                 loading = state.isBusy,
             )
+        }
+        if (state.returnHomeAfterSelection) {
+            Spacer(Modifier.height(8.dp))
+            SrButton("На главный экран", onGoHome, Modifier.fillMaxWidth(), style = SrButtonStyle.Secondary)
         }
     }
 }

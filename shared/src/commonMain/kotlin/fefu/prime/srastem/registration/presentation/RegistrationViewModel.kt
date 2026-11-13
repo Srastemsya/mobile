@@ -27,7 +27,7 @@ data class RegistrationUiState(
     val step: RegistrationStep = RegistrationStep.METHOD,
     val method: RegistrationMethod? = null,
     val contact: String = "",
-    val code: String = "",
+    val code: String = "0427",
     val name: String = "",
     val birthDate: String = "",
     val error: String? = null,

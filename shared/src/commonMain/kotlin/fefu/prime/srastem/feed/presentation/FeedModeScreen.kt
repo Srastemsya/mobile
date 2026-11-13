@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +41,6 @@ import ru.srastemsya.uikit.SrField
 import ru.srastemsya.uikit.SrFieldKind
 import ru.srastemsya.uikit.SrDate
 import ru.srastemsya.uikit.SrDateField
-import ru.srastemsya.uikit.SrVoteActions
 import ru.srastemsya.uikit.SrIconButton
 import fefu.prime.srastem.feed.domain.SwipeDecision
 import androidx.compose.foundation.layout.Box
@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 fun FeedModeScreen(
     state: FeedModeState,
     onEvent: (FeedModeEvent) -> Unit,
+    onGoHome: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val stub = state.stub
@@ -159,8 +160,22 @@ fun FeedModeScreen(
     if (state.chosen != null) {
         val chosen = state.chosen
         val details = state.catalogDetails
-        val kindLabel =
-            if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "К мероприятию" else "К месту"
+        LaunchedEffect(chosen.ref, details, state.loadingDetails, state.detailsError) {
+            if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE &&
+                details == null && !state.loadingDetails && state.detailsError == null
+            ) {
+                onEvent(FeedModeEvent.OpenCatalogDetails)
+            }
+        }
+        if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE && details != null) {
+            FeedCatalogDetailsScreen(
+                details = details,
+                onBack = { onEvent(FeedModeEvent.CloseCatalogDetails) },
+                onGoHome = onGoHome,
+                modifier = modifier,
+            )
+            return
+        }
         Column(
             modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
                 .windowInsetsPadding(WindowInsets.statusBars)
@@ -168,7 +183,7 @@ fun FeedModeScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             SrTopBar(
-                title = if (details != null) "Подробности" else "Вы выбрали",
+                title = if (details != null) "О месте" else "Вы выбрали",
                 onBack = if (details != null) ({ onEvent(FeedModeEvent.CloseCatalogDetails) }) else null
             )
             val cover = details?.coverUrl?.takeIf(String::isNotBlank) ?: chosen.coverUrl
@@ -177,7 +192,9 @@ fun FeedModeScreen(
                     .background(SrColors.Solid), contentAlignment = Alignment.Center
             ) {
                 FeedCardCover(cover, chosen.title, Modifier.fillMaxSize())
-                SrChip("Вы выбрали", selected = true, onClick = {})
+                if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE) {
+                    SrChip("Вы выбрали", selected = true, onClick = {})
+                }
             }
             Text(details?.title ?: chosen.title, style = SrType.Display, color = SrColors.Text)
             val categoryLabel = state.categories.firstOrNull { it.id == chosen.category }?.label
@@ -203,22 +220,17 @@ fun FeedModeScreen(
                 style = SrType.Body,
                 color = SrColors.Text
             )
-            if (details == null) {
-                if (state.loadingDetails) CircularProgressIndicator(
-                    Modifier.size(32.dp),
-                    color = SrColors.Primary
-                )
-                state.detailsError?.let { Text(it, style = SrType.Label, color = SrColors.Error) }
-                SrButton(
-                    if (state.detailsError == null) kindLabel else "Повторить",
-                    { onEvent(if (state.detailsError == null) FeedModeEvent.OpenCatalogDetails else FeedModeEvent.RetryCatalogDetails) },
-                    loading = state.loadingDetails,
-                    enabled = !state.loadingDetails
-                )
-            } else {
-                details.endsAt?.let(::displayCatalogTime)?.takeIf(String::isNotBlank)
-                    ?.let { Text("До $it", style = SrType.Label, color = SrColors.Muted) }
+            if (details == null && state.loadingDetails) {
+                CircularProgressIndicator(Modifier.size(32.dp), color = SrColors.Primary)
             }
+            state.detailsError?.let { Text(it, style = SrType.Label, color = SrColors.Error) }
+            if (state.detailsError != null) SrButton(
+                "Повторить",
+                { onEvent(FeedModeEvent.RetryCatalogDetails) },
+                loading = state.loadingDetails,
+                enabled = !state.loadingDetails,
+            )
+            SrButton("На главный экран", onGoHome, Modifier.fillMaxWidth())
         }
         return
     }
@@ -293,16 +305,11 @@ fun FeedModeScreen(
                         .then(if (landscape) Modifier.height(340.dp) else Modifier.weight(1f)),
                     onSwipe = { onEvent(FeedModeEvent.SwipeDecided(it)) },
                 )
+                VoteDirectionHint()
                 Text(
                     "${(swipe.index + 1).coerceAtMost(swipe.cards.size)} / ${swipe.cards.size}",
                     style = SrType.Label,
                     color = SrColors.Muted
-                )
-                SrVoteActions(
-                    onPass = { onEvent(FeedModeEvent.SwipeDecided(SwipeDecision.SKIP)) },
-                    onLike = { onEvent(FeedModeEvent.SwipeDecided(SwipeDecision.LIKE)) },
-                    onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null,
-                    progress = swipe.progress
                 )
             } else if (state.feedExhausted) {
                 Text("Больше вариантов нет", style = SrType.Title, color = SrColors.Text)
