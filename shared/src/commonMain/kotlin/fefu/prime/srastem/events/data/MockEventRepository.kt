@@ -32,7 +32,8 @@ class MockEventRepository : EventRepository {
             description = draft.description.trim(),
             admission = draft.admission,
             capacity = if (draft.admission == EventAdmission.BOOKING) draft.capacity.toIntOrNull() else null,
-            priceRub = if (draft.admission == EventAdmission.BOOKING) draft.priceRub.toIntOrNull() ?: 0 else 0,
+            priceRub = if (draft.admission == EventAdmission.BOOKING) draft.priceRub.toIntOrNull()
+                ?: 0 else 0,
             organizerId = DEMO_USER_ID,
             organizerName = "Ренат",
             coverUri = draft.coverUri,
@@ -57,7 +58,11 @@ class MockEventRepository : EventRepository {
         update(event.copy(participants = event.participants.filterNot { it.id == userId }))
     }
 
-    override suspend fun removeParticipant(eventId: String, organizerId: String, participantId: String) = mutex.withLock {
+    override suspend fun removeParticipant(
+        eventId: String,
+        organizerId: String,
+        participantId: String
+    ) = mutex.withLock {
         val event = eventOrThrow(eventId)
         require(event.organizerId == organizerId) { "Удалять участников может только организатор" }
         update(event.copy(participants = event.participants.filterNot { it.id == participantId }))
@@ -105,7 +110,10 @@ class MockEventRepository : EventRepository {
             admission = EventAdmission.BOOKING, capacity = 8, priceRub = 0,
             organizerId = "organizer-dima", organizerName = "Дима",
             latitude = 43.1157, longitude = 131.8856,
-            participants = listOf(EventParticipant("quiz-guest-1", "Аня"), EventParticipant("quiz-guest-2", "Миша")),
+            participants = listOf(
+                EventParticipant("quiz-guest-1", "Аня"),
+                EventParticipant("quiz-guest-2", "Миша")
+            ),
         ),
         SrEvent(
             id = "promenade-demo", title = "Прогулка по набережной", category = EventCategory.WALK,
@@ -114,13 +122,24 @@ class MockEventRepository : EventRepository {
             admission = EventAdmission.FREE, capacity = 8, priceRub = 0,
             organizerId = DEMO_USER_ID, organizerName = "Ренат",
             latitude = 43.1155, longitude = 131.8855,
-            participants = listOf(EventParticipant("guest-anna", "Анна Ким"), EventParticipant("guest-ilya", "Илья Волков")),
+            participants = listOf(
+                EventParticipant("guest-anna", "Анна Ким"),
+                EventParticipant("guest-ilya", "Илья Волков")
+            ),
         ),
         SrEvent(
-            id = "shkota-past", title = "Закат на Шкота", category = EventCategory.WALK,
-            startsAt = "2 июня · Владивосток", address = "Остров Шкота, Владивосток",
-            description = "Вечерняя прогулка у моря.", admission = EventAdmission.FREE, capacity = null, priceRub = 0,
-            organizerId = DEMO_USER_ID, organizerName = "Ренат", isPast = true,
+            id = "shkota-past",
+            title = "Закат на Шкота",
+            category = EventCategory.WALK,
+            startsAt = "2 июня · Владивосток",
+            address = "Остров Шкота, Владивосток",
+            description = "Вечерняя прогулка у моря.",
+            admission = EventAdmission.FREE,
+            capacity = null,
+            priceRub = 0,
+            organizerId = DEMO_USER_ID,
+            organizerName = "Ренат",
+            isPast = true,
         ),
     )
 

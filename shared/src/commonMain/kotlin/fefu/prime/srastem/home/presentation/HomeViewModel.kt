@@ -20,7 +20,9 @@ class HomeViewModel(private val getHome: GetHome) : ViewModel() {
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
-    init { refresh() }
+    init {
+        refresh()
+    }
 
     fun refresh() {
         viewModelScope.launch {
@@ -30,7 +32,10 @@ class HomeViewModel(private val getHome: GetHome) : ViewModel() {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _state.value = _state.value.copy(isLoading = false, error = error.message ?: "Не удалось загрузить открытия")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = error.message ?: "Не удалось загрузить открытия"
+                )
             }
         }
     }

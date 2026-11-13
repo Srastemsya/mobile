@@ -43,12 +43,32 @@ class PartyViewModel(private val repository: PartyRepository) : ViewModel() {
 
     fun openCreate() {
         roomObservation?.cancel()
-        _state.update { it.copy(page = PartyPage.CREATE, session = null, isSingleDevice = false, localItems = emptyList(), selectedItem = null, error = null) }
+        _state.update {
+            it.copy(
+                page = PartyPage.CREATE,
+                session = null,
+                isSingleDevice = false,
+                localItems = emptyList(),
+                selectedItem = null,
+                error = null
+            )
+        }
     }
+
     fun openJoin() {
         roomObservation?.cancel()
-        _state.update { it.copy(page = PartyPage.JOIN, session = null, isSingleDevice = false, localItems = emptyList(), selectedItem = null, error = null) }
+        _state.update {
+            it.copy(
+                page = PartyPage.JOIN,
+                session = null,
+                isSingleDevice = false,
+                localItems = emptyList(),
+                selectedItem = null,
+                error = null
+            )
+        }
     }
+
     fun openSingleDevice() {
         roomObservation?.cancel()
         _state.update {
@@ -63,14 +83,17 @@ class PartyViewModel(private val repository: PartyRepository) : ViewModel() {
             )
         }
     }
+
     fun back() = _state.update {
-        it.copy(page = when (it.page) {
-            PartyPage.CREATE, PartyPage.JOIN -> PartyPage.MODE
-            PartyPage.LOBBY -> if (it.session?.room?.hostId == it.session?.participantId) PartyPage.MODE else PartyPage.JOIN
-            PartyPage.FILTERS -> if (it.isSingleDevice) PartyPage.MODE else PartyPage.LOBBY
-            PartyPage.FEED, PartyPage.WAITING, PartyPage.RESULT -> if (it.isSingleDevice) PartyPage.MODE else PartyPage.LOBBY
-            PartyPage.MODE -> PartyPage.MODE
-        }, error = null)
+        it.copy(
+            page = when (it.page) {
+                PartyPage.CREATE, PartyPage.JOIN -> PartyPage.MODE
+                PartyPage.LOBBY -> if (it.session?.room?.hostId == it.session?.participantId) PartyPage.MODE else PartyPage.JOIN
+                PartyPage.FILTERS -> if (it.isSingleDevice) PartyPage.MODE else PartyPage.LOBBY
+                PartyPage.FEED, PartyPage.WAITING, PartyPage.RESULT -> if (it.isSingleDevice) PartyPage.MODE else PartyPage.LOBBY
+                PartyPage.MODE -> PartyPage.MODE
+            }, error = null
+        )
     }
 
     fun setRoomName(value: String) = _state.update { it.copy(roomName = value) }
@@ -84,25 +107,36 @@ class PartyViewModel(private val repository: PartyRepository) : ViewModel() {
     }
 
     fun createRoom() = perform {
-        val session = repository.createRoom(_state.value.roomName.trim(), _state.value.participantName.trim().ifBlank { "Гость" })
+        val session = repository.createRoom(
+            _state.value.roomName.trim(),
+            _state.value.participantName.trim().ifBlank { "Гость" })
         attach(session, PartyPage.LOBBY)
     }
 
     fun joinRoom() = perform {
-        val session = repository.joinRoom(_state.value.roomCode.trim(), _state.value.participantName.trim().ifBlank { "Гость" })
-        attach(session, when (session.room.phase) {
-            PartyPhase.LOBBY -> PartyPage.LOBBY
-            PartyPhase.FEED -> PartyPage.FEED
-            PartyPhase.WAITING -> PartyPage.WAITING
-            PartyPhase.MATCH, PartyPhase.FINISHED -> PartyPage.RESULT
-        })
+        val session = repository.joinRoom(
+            _state.value.roomCode.trim(),
+            _state.value.participantName.trim().ifBlank { "Гость" })
+        attach(
+            session, when (session.room.phase) {
+                PartyPhase.LOBBY -> PartyPage.LOBBY
+                PartyPhase.FEED -> PartyPage.FEED
+                PartyPhase.WAITING -> PartyPage.WAITING
+                PartyPhase.MATCH, PartyPhase.FINISHED -> PartyPage.RESULT
+            }
+        )
     }
 
     fun updateFilters(transform: (PartyFilters) -> PartyFilters) {
         _state.update { it.copy(filters = transform(it.filters)) }
     }
 
-    fun openFilters() = _state.update { it.copy(page = PartyPage.FILTERS, filters = it.session?.room?.filters ?: it.filters) }
+    fun openFilters() = _state.update {
+        it.copy(
+            page = PartyPage.FILTERS,
+            filters = it.session?.room?.filters ?: it.filters
+        )
+    }
 
     fun saveFiltersAndStart() = perform {
         val session = _state.value.session ?: return@perform
@@ -149,27 +183,29 @@ class PartyViewModel(private val repository: PartyRepository) : ViewModel() {
             return
         }
         perform {
-        val session = _state.value.session ?: return@perform
-        val items = session.room.items
-        val item = items.getOrNull(_state.value.itemIndex) ?: return@perform
-        repository.submitVote(session.room.id, session.participantId, item.id, vote)
-        val nextIndex = _state.value.itemIndex + 1
-        val latestRoom = if (items.size - nextIndex <= 2) {
-            repository.loadMoreItems(session.room.id, session.participantId, nextIndex)
-        } else {
-            null
-        }
-        _state.update { current ->
-            current.copy(
-                session = if (latestRoom == null) current.session else current.session?.copy(room = latestRoom),
-                itemIndex = nextIndex,
-            )
-        }
-        val availableItems = latestRoom?.items ?: _state.value.session?.room?.items.orEmpty()
-        if (nextIndex >= availableItems.size) {
-            repository.completeFeed(session.room.id, session.participantId)
-            _state.update { it.copy(page = PartyPage.WAITING) }
-        }
+            val session = _state.value.session ?: return@perform
+            val items = session.room.items
+            val item = items.getOrNull(_state.value.itemIndex) ?: return@perform
+            repository.submitVote(session.room.id, session.participantId, item.id, vote)
+            val nextIndex = _state.value.itemIndex + 1
+            val latestRoom = if (items.size - nextIndex <= 2) {
+                repository.loadMoreItems(session.room.id, session.participantId, nextIndex)
+            } else {
+                null
+            }
+            _state.update { current ->
+                current.copy(
+                    session = if (latestRoom == null) current.session else current.session?.copy(
+                        room = latestRoom
+                    ),
+                    itemIndex = nextIndex,
+                )
+            }
+            val availableItems = latestRoom?.items ?: _state.value.session?.room?.items.orEmpty()
+            if (nextIndex >= availableItems.size) {
+                repository.completeFeed(session.room.id, session.participantId)
+                _state.update { it.copy(page = PartyPage.WAITING) }
+            }
         }
     }
 
@@ -179,11 +215,20 @@ class PartyViewModel(private val repository: PartyRepository) : ViewModel() {
         if (!current.isSingleDevice || current.page != PartyPage.FEED || current.itemIndex <= 0) return
         _state.update { it.copy(itemIndex = it.itemIndex - 1, error = null) }
     }
+
     fun retry() = _state.update { it.copy(error = null, page = PartyPage.MODE) }
 
     private fun attach(session: PartySession, page: PartyPage) {
         roomObservation?.cancel()
-        _state.update { it.copy(session = session, roomCode = session.room.id, filters = session.room.filters, page = page, error = null) }
+        _state.update {
+            it.copy(
+                session = session,
+                roomCode = session.room.id,
+                filters = session.room.filters,
+                page = page,
+                error = null
+            )
+        }
         roomObservation = viewModelScope.launch {
             repository.observeRoom(session.room.id).collect { room ->
                 _state.update { current ->

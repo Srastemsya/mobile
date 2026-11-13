@@ -33,14 +33,16 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
     override fun observeEvents(): Flow<List<SrEvent>> = events.asStateFlow()
 
     override suspend fun getEventCategories(): List<EventCatalogCategory> =
-        api.get("/v1/catalog/categories").jsonObject["items"]?.jsonArray.orEmpty().mapNotNull { element ->
-            val category = element.jsonObject
-            val kinds = category["kinds"]?.jsonArray?.map { it.jsonPrimitive.contentOrNull }.orEmpty()
-            if ("EVENT" !in kinds) null else EventCatalogCategory(
-                id = category.string("id").orEmpty(),
-                label = category.string("label").orEmpty(),
-            )
-        }
+        api.get("/v1/catalog/categories").jsonObject["items"]?.jsonArray.orEmpty()
+            .mapNotNull { element ->
+                val category = element.jsonObject
+                val kinds =
+                    category["kinds"]?.jsonArray?.map { it.jsonPrimitive.contentOrNull }.orEmpty()
+                if ("EVENT" !in kinds) null else EventCatalogCategory(
+                    id = category.string("id").orEmpty(),
+                    label = category.string("label").orEmpty(),
+                )
+            }
 
     override suspend fun refreshEvents() {
         val cards = mutableListOf<SrEvent>()
@@ -62,7 +64,8 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
                 }
                 throw error
             }
-            cards += response["items"]?.jsonArray.orEmpty().map { card -> eventFromCard(card.jsonObject) }
+            cards += response["items"]?.jsonArray.orEmpty()
+                .map { card -> eventFromCard(card.jsonObject) }
             cursor = response.string("nextCursor")
             if (cursor == null) break
         }
@@ -110,7 +113,12 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
         } else {
             require(capacity != null && capacity > 0) { "Количество мест должно быть больше нуля" }
             require(priceRub == 0) { "Платная запись пока не поддерживается сервером" }
-            JsonObject(mapOf("type" to JsonPrimitive("REGISTRATION"), "capacity" to JsonPrimitive(capacity)))
+            JsonObject(
+                mapOf(
+                    "type" to JsonPrimitive("REGISTRATION"),
+                    "capacity" to JsonPrimitive(capacity)
+                )
+            )
         }
         val price = if (draft.priceRub.isBlank()) JsonNull else buildJsonObject {
             put("amountMinor", JsonPrimitive(priceRub * 100))
@@ -118,7 +126,10 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
         }
         val body = buildJsonObject {
             put("title", JsonPrimitive(draft.title.trim()))
-            put("description", JsonPrimitive(draft.description.trim().ifBlank { draft.title.trim() }))
+            put(
+                "description",
+                JsonPrimitive(draft.description.trim().ifBlank { draft.title.trim() })
+            )
             put("categoryId", JsonPrimitive(categoryId))
             put("location", buildJsonObject {
                 put("latitude", JsonPrimitive(draft.latitude))
@@ -130,9 +141,11 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
             put("timeZone", JsonPrimitive("Asia/Vladivostok"))
             put("admission", admission)
         }
-        val key = pendingCreateKey ?: api.idempotencyKey("publish-event").also { pendingCreateKey = it }
+        val key =
+            pendingCreateKey ?: api.idempotencyKey("publish-event").also { pendingCreateKey = it }
         try {
-            val created = api.post("/v1/events", body, key).value?.jsonObject ?: error("Сервер не вернул событие")
+            val created = api.post("/v1/events", body, key).value?.jsonObject
+                ?: error("Сервер не вернул событие")
             pendingCreateKey = null
             api.clearIdempotencyKey("publish-event")
             val event = parseEvent(created)
@@ -150,15 +163,25 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
     override suspend fun joinEvent(eventId: String, userId: String) {
         val scope = "register-event:$eventId"
         val response = try {
-            api.postEmpty("/v1/events/$eventId/registrations", api.idempotencyKey(scope)).value?.jsonObject
+            api.postEmpty(
+                "/v1/events/$eventId/registrations",
+                api.idempotencyKey(scope)
+            ).value?.jsonObject
         } catch (error: BackendException) {
             if (error.status in 400..499) api.clearIdempotencyKey(scope)
             throw error
         }
         api.clearIdempotencyKey(scope)
-        val count = response?.get("admission")?.jsonObject?.get("confirmedCount")?.jsonPrimitive?.intOrNull
+        val count =
+            response?.get("admission")?.jsonObject?.get("confirmedCount")?.jsonPrimitive?.intOrNull
         getEvent(eventId)?.let { current ->
-            events.value = events.value.map { if (it.id == eventId) current.copy(isAttending = true, canRegister = false, confirmedCount = count ?: current.confirmedCount + 1) else it }
+            events.value = events.value.map {
+                if (it.id == eventId) current.copy(
+                    isAttending = true,
+                    canRegister = false,
+                    confirmedCount = count ?: current.confirmedCount + 1
+                ) else it
+            }
         }
     }
 
@@ -166,10 +189,16 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
         throw UnsupportedOperationException("Серверный контракт пока не поддерживает отмену собственной записи")
     }
 
-    override suspend fun removeParticipant(eventId: String, organizerId: String, participantId: String) {
-        val participant = events.value.firstOrNull { it.id == eventId }?.participants?.firstOrNull { it.id == participantId }
-            ?: error("Участник больше не найден")
-        val registrationId = participant.registrationId ?: error("Не удалось определить запись участника")
+    override suspend fun removeParticipant(
+        eventId: String,
+        organizerId: String,
+        participantId: String
+    ) {
+        val participant =
+            events.value.firstOrNull { it.id == eventId }?.participants?.firstOrNull { it.id == participantId }
+                ?: error("Участник больше не найден")
+        val registrationId =
+            participant.registrationId ?: error("Не удалось определить запись участника")
         api.delete("/v1/events/$eventId/registrations/$registrationId")
         getEvent(eventId)
     }
@@ -181,14 +210,16 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
     private fun parseEvent(json: JsonObject): SrEvent {
         val card = json
         val admissionJson = card["admission"]?.jsonObject
-        val admission = if (admissionJson?.string("type") == "REGISTRATION") EventAdmission.BOOKING else EventAdmission.FREE
+        val admission =
+            if (admissionJson?.string("type") == "REGISTRATION") EventAdmission.BOOKING else EventAdmission.FREE
         val viewer = card["viewer"]?.jsonObject
         val registration = viewer?.get("registration")?.takeUnless { it == JsonNull }?.jsonObject
         val categoryId = card.string("categoryId").orEmpty()
         val location = card["location"]?.jsonObject
         val count = admissionJson?.get("confirmedCount")?.jsonPrimitive?.intOrNull ?: 0
         val capacity = admissionJson?.get("capacity")?.jsonPrimitive?.intOrNull
-        val minor = card["price"]?.takeUnless { it == JsonNull }?.jsonObject?.get("amountMinor")?.jsonPrimitive?.intOrNull
+        val minor =
+            card["price"]?.takeUnless { it == JsonNull }?.jsonObject?.get("amountMinor")?.jsonPrimitive?.intOrNull
         val start = card.string("startsAt").orEmpty()
         return SrEvent(
             id = card.string("id") ?: card["ref"]?.jsonObject?.string("id").orEmpty(),
@@ -202,9 +233,12 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
             priceRub = (minor ?: 0) / 100,
             organizerId = card.string("organizerId").orEmpty(),
             organizerName = "Организатор",
-            coverUri = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.string("url")?.let(api::resolveMediaUrl),
-            latitude = location?.get("latitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: 43.1155,
-            longitude = location?.get("longitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: 131.8855,
+            coverUri = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.string("url")
+                ?.let(api::resolveMediaUrl),
+            latitude = location?.get("latitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                ?: 43.1155,
+            longitude = location?.get("longitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                ?: 131.8855,
             participants = emptyList(),
             isPast = card.string("phase") == "PAST",
             confirmedCount = count,
@@ -217,7 +251,8 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
 
     private fun eventFromCard(card: JsonObject): SrEvent {
         val admission = card["admission"]?.jsonObject
-        val price = card["price"]?.takeUnless { it == JsonNull }?.jsonObject?.get("amountMinor")?.jsonPrimitive?.intOrNull
+        val price =
+            card["price"]?.takeUnless { it == JsonNull }?.jsonObject?.get("amountMinor")?.jsonPrimitive?.intOrNull
         val location = card["location"]?.jsonObject
         val start = card.string("startsAt").orEmpty()
         return SrEvent(
@@ -232,9 +267,12 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
             priceRub = (price ?: 0) / 100,
             organizerId = "",
             organizerName = "Организатор",
-            coverUri = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.string("url")?.let(api::resolveMediaUrl),
-            latitude = location?.get("latitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: 43.1155,
-            longitude = location?.get("longitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: 131.8855,
+            coverUri = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.string("url")
+                ?.let(api::resolveMediaUrl),
+            latitude = location?.get("latitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                ?: 43.1155,
+            longitude = location?.get("longitude")?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                ?: 131.8855,
             confirmedCount = admission?.get("confirmedCount")?.jsonPrimitive?.intOrNull ?: 0,
             canRegister = admission?.string("type") == "REGISTRATION",
             canCancelRegistration = false,
@@ -253,12 +291,22 @@ class BackendEventRepository(private val api: BackendApi) : EventRepository {
         val match = Regex("(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4}).*?(\\d{1,2}):(\\d{2})").find(value)
             ?: error("Укажите дату и время события")
         val (day, month, year, hour, minute) = match.destructured
-        return "${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:$minute:00+10:00"
+        return "${year.padStart(4, '0')}-${month.padStart(2, '0')}-${
+            day.padStart(
+                2,
+                '0'
+            )
+        }T${hour.padStart(2, '0')}:$minute:00+10:00"
     }
 
     private fun displayDate(value: String): String {
         if (value.length < 16) return value
-        return "${value.substring(8, 10)}.${value.substring(5, 7)}.${value.substring(0, 4)} · ${value.substring(11, 16)}"
+        return "${value.substring(8, 10)}.${value.substring(5, 7)}.${
+            value.substring(
+                0,
+                4
+            )
+        } · ${value.substring(11, 16)}"
     }
 }
 

@@ -137,11 +137,15 @@ private fun MainNavigation(
     val feedState by feedModeViewModel.state.collectAsState()
     val profileState by profileViewModel.state.collectAsState()
     val eventState by eventViewModel.state.collectAsState()
-    val eventListUnderGlass = currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
+    val eventListUnderGlass =
+        currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
 
     FeedBackHandler(enabled = currentDestination == Destination.FeedScreen) {
-        if (feedState.stub?.title?.startsWith("FE-F04") == true) { roomLobbyViewModel.leave(); feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) }
-        else if (feedState.stub != null || feedState.filterOpen || feedState.cards.isNotEmpty() || feedState.feedError != null) feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+        if (feedState.stub?.title?.startsWith("FE-F04") == true) {
+            roomLobbyViewModel.leave(); feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+        } else if (feedState.stub != null || feedState.filterOpen || feedState.cards.isNotEmpty() || feedState.feedError != null) feedModeViewModel.onEvent(
+            FeedModeEvent.DismissNotice
+        )
         else viewModel.backFromFeed()
     }
 
@@ -206,10 +210,10 @@ private fun MainNavigation(
             // AC-03: таббар виден только на экране выбора режима ленты; последующие шаги
             // (FE-F01 filters/results, FE-F04 stub, room steps) open over it without the tab bar.
             val showBottomNavigation = currentDestination != Destination.MapScreen &&
-                (currentDestination != Destination.FeedScreen || (feedState.stub == null && !feedState.filterOpen && feedState.cards.isEmpty() && feedState.feedError == null)) &&
-                (currentDestination != Destination.Profile || profileState.page == ProfilePage.HOME) &&
-                (currentDestination != Destination.EventsScreen || eventState.page == EventPage.LIST) &&
-                (currentDestination != Destination.RoomScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE)
+                    (currentDestination != Destination.FeedScreen || (feedState.stub == null && !feedState.filterOpen && feedState.cards.isEmpty() && feedState.feedError == null)) &&
+                    (currentDestination != Destination.Profile || profileState.page == ProfilePage.HOME) &&
+                    (currentDestination != Destination.EventsScreen || eventState.page == EventPage.LIST) &&
+                    (currentDestination != Destination.RoomScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE)
             if (showBottomNavigation) {
                 BottomNavigationBar(
                     selectedDestination = currentDestination,
@@ -252,7 +256,13 @@ private fun DestinationContent(
                     fefu.prime.srastem.map.domain.MapMarkerType.Activity -> "Активность"
                 }
                 profileViewModel.saveEvent(
-                    ProfileEvent(marker.id, marker.title, marker.subtitle, category, EventStatus.UPCOMING),
+                    ProfileEvent(
+                        marker.id,
+                        marker.title,
+                        marker.subtitle,
+                        category,
+                        EventStatus.UPCOMING
+                    ),
                 )
             },
         )
@@ -271,7 +281,11 @@ private fun DestinationContent(
     if (destination == Destination.FeedScreen) {
         val feedState by feedModeViewModel.state.collectAsState()
         if (feedState.stub?.title?.startsWith("FE-F04") == true) {
-            RoomLobbyScreen(roomLobbyViewModel, onBack = { feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) }, modifier = modifier)
+            RoomLobbyScreen(
+                roomLobbyViewModel,
+                onBack = { feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) },
+                modifier = modifier
+            )
             return
         }
         FeedModeScreen(
@@ -293,7 +307,10 @@ private fun DestinationContent(
         return
     }
     if (destination == Destination.EventsScreen) {
-        EventScreen(eventViewModel, modifier = modifier, onOpenMap = { onNavigate(Destination.MapScreen) })
+        EventScreen(
+            eventViewModel,
+            modifier = modifier,
+            onOpenMap = { onNavigate(Destination.MapScreen) })
         return
     }
     if (destination == Destination.RoomScreen) {

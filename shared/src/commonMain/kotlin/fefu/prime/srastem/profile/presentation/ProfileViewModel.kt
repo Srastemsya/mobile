@@ -41,7 +41,10 @@ class ProfileViewModel(
         }
     }
 
-    fun open(page: ProfilePage) { _state.update { it.copy(page = page) } }
+    fun open(page: ProfilePage) {
+        _state.update { it.copy(page = page) }
+    }
+
     fun back() = open(ProfilePage.HOME)
 
     fun updateProfile(transform: (ProfileDetails) -> ProfileDetails) {

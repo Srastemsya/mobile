@@ -25,7 +25,8 @@ class BackendHomeRepository(private val api: BackendApi) : HomeRepository {
                 subtitle = category,
                 category = category,
                 categoryId = filters?.string("categoryId"),
-                filters = filters?.mapValues { (_, value) -> value.jsonPrimitive.contentOrNull.orEmpty() }.orEmpty(),
+                filters = filters?.mapValues { (_, value) -> value.jsonPrimitive.contentOrNull.orEmpty() }
+                    .orEmpty(),
             )
         }
         val categories = root["quickCategories"]?.jsonArray.orEmpty().map { element ->
@@ -33,7 +34,8 @@ class BackendHomeRepository(private val api: BackendApi) : HomeRepository {
             HomeQuickCategory(
                 id = category.string("id").orEmpty(),
                 label = category.string("label").orEmpty(),
-                kinds = category["kinds"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty(),
+                kinds = category["kinds"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }
+                    .orEmpty(),
             )
         }
         val upcoming = root["upcoming"]?.jsonArray.orEmpty().mapNotNull { element ->
@@ -48,7 +50,12 @@ class BackendHomeRepository(private val api: BackendApi) : HomeRepository {
                 address = location?.string("address").orEmpty(),
             )
         }
-        return HomeContent(city = "Владивосток", collections = collections, quickCategories = categories, upcoming = upcoming)
+        return HomeContent(
+            city = "Владивосток",
+            collections = collections,
+            quickCategories = categories,
+            upcoming = upcoming
+        )
     }
 
     private fun categoryLabel(id: String): String = when (id) {

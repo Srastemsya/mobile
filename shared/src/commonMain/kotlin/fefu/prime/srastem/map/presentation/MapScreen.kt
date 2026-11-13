@@ -204,7 +204,8 @@ fun MapScreen(
     catalogViewModel: MapCatalogViewModel? = null,
     onOpenEvent: (String) -> Unit = {},
 ) {
-    val catalogState by (catalogViewModel?.state ?: remember { kotlinx.coroutines.flow.MutableStateFlow(MapCatalogUiState()) }).collectAsState()
+    val catalogState by (catalogViewModel?.state
+        ?: remember { kotlinx.coroutines.flow.MutableStateFlow(MapCatalogUiState()) }).collectAsState()
     LaunchedEffect(catalogViewModel) { catalogViewModel?.refresh() }
     val baseMarkers = remember(catalogViewModel, catalogState.eventMarkers) {
         if (catalogViewModel == null) previewMarkers else catalogState.eventMarkers
@@ -256,18 +257,19 @@ fun MapScreen(
         }
     }
     val selectedMarker = visibleMarkers.firstOrNull { it.id == selectedMarkerId }
-    val searchResults = remember(searchText, allMarkers, catalogState.searchResults, catalogViewModel) {
-        if (searchText.isBlank()) emptyList()
-        else if (catalogViewModel != null) catalogState.searchResults
-        else allMarkers.filter { marker ->
-            marker.title.contains(searchText, ignoreCase = true) ||
-                    marker.subtitle.contains(searchText, ignoreCase = true) ||
-                    (searchText.contains(
-                        "квиз",
-                        ignoreCase = true
-                    ) && marker.icon == MapMarkerIcon.Quiz)
+    val searchResults =
+        remember(searchText, allMarkers, catalogState.searchResults, catalogViewModel) {
+            if (searchText.isBlank()) emptyList()
+            else if (catalogViewModel != null) catalogState.searchResults
+            else allMarkers.filter { marker ->
+                marker.title.contains(searchText, ignoreCase = true) ||
+                        marker.subtitle.contains(searchText, ignoreCase = true) ||
+                        (searchText.contains(
+                            "квиз",
+                            ignoreCase = true
+                        ) && marker.icon == MapMarkerIcon.Quiz)
+            }
         }
-    }
 
     LaunchedEffect(selectedCategory, appliedFilters) {
         if (selectedMarkerId !in visibleMarkers.map { it.id }) selectedMarkerId = null
@@ -455,7 +457,11 @@ fun MapScreen(
                             SelectedMarkerCard(
                                 marker = marker,
                                 onSave = { onSaveEvent(marker) },
-                                onOpenDetails = { if (marker.type == MapMarkerType.Event) onOpenEvent(marker.id) },
+                                onOpenDetails = {
+                                    if (marker.type == MapMarkerType.Event) onOpenEvent(
+                                        marker.id
+                                    )
+                                },
                                 locationPickerMode = locationPickerMode,
                                 onChooseLocation = { onLocationSelected(marker) },
                                 modifier = Modifier.align(Alignment.BottomCenter)
@@ -626,7 +632,12 @@ private fun CategoryTabs(selected: MapCategory, onSelected: (MapCategory) -> Uni
                                 spotColor = SrColors.Primary.copy(alpha = .22f),
                             )
                         } else {
-                            Modifier.shadow(6.dp, shape, ambientColor = SrColors.Shadow, spotColor = SrColors.Shadow)
+                            Modifier.shadow(
+                                6.dp,
+                                shape,
+                                ambientColor = SrColors.Shadow,
+                                spotColor = SrColors.Shadow
+                            )
                         },
                     )
                     .clip(shape)
@@ -637,7 +648,11 @@ private fun CategoryTabs(selected: MapCategory, onSelected: (MapCategory) -> Uni
             ) {
                 Text(
                     category.label,
-                    style = SrType.Caption.copy(fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Bold),
+                    style = SrType.Caption.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = if (isSelected) SrColors.OnAction else SrColors.Text,
                 )
             }
@@ -780,9 +795,19 @@ private fun SelectedMarkerCard(
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     if (marker.type == MapMarkerType.Event) {
-                        SrIconButton(SrIcon.Next, "Открыть событие", onOpenDetails, modifier = Modifier.size(40.dp))
+                        SrIconButton(
+                            SrIcon.Next,
+                            "Открыть событие",
+                            onOpenDetails,
+                            modifier = Modifier.size(40.dp)
+                        )
                     }
-                    SrIconButton(SrIcon.Save, "Сохранить событие", onSave, modifier = Modifier.size(40.dp))
+                    SrIconButton(
+                        SrIcon.Save,
+                        "Сохранить событие",
+                        onSave,
+                        modifier = Modifier.size(40.dp)
+                    )
                 }
             }
         }

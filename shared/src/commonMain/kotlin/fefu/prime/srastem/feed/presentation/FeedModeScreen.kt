@@ -94,17 +94,41 @@ fun FeedModeScreen(
         return
     }
     if (state.filterOpen) {
-        Column(modifier.fillMaxSize().background(FeedDesign.ScreenGradient).windowInsetsPadding(WindowInsets.statusBars).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(
+            modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
+                .windowInsetsPadding(WindowInsets.statusBars).verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             SrTopBar(title = "Фильтры", onBack = { onEvent(FeedModeEvent.DismissNotice) })
             Text("Что ищем?", style = SrType.Display, color = SrColors.Text)
-            Text("Вы выбираете вместе на одном устройстве", style = SrType.Body, color = SrColors.Muted)
+            Text(
+                "Вы выбираете вместе на одном устройстве",
+                style = SrType.Body,
+                color = SrColors.Muted
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SrChip("Места", selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE, onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.PLACE)) })
-                SrChip("События", selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT, onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.EVENT)) })
+                SrChip(
+                    "Места",
+                    selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE,
+                    onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.PLACE)) })
+                SrChip(
+                    "События",
+                    selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT,
+                    onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.EVENT)) })
             }
             if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) SrDateField(
                 value = state.localDate.asSrDate(),
-                onSelect = { date -> onEvent(FeedModeEvent.DateChanged("${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}")) },
+                onSelect = { date ->
+                    onEvent(
+                        FeedModeEvent.DateChanged(
+                            "${
+                                date.year.toString().padStart(4, '0')
+                            }-${date.month.toString().padStart(2, '0')}-${
+                                date.day.toString().padStart(2, '0')
+                            }"
+                        )
+                    )
+                },
                 label = "Дата события",
                 errorMessage = if (state.fieldError?.contains("дату") == true) state.fieldError else null,
             )
@@ -113,16 +137,41 @@ fun FeedModeScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SrChip("Все", selected = state.categoryId == null, onClick = { onEvent(FeedModeEvent.CategoryChanged(null)) })
+                SrChip(
+                    "Все",
+                    selected = state.categoryId == null,
+                    onClick = { onEvent(FeedModeEvent.CategoryChanged(null)) })
                 state.categories.filter { state.kind.name in it.kinds }.forEach { category ->
-                    SrChip(category.label, selected = state.categoryId == category.id, onClick = { onEvent(FeedModeEvent.CategoryChanged(category.id)) })
+                    SrChip(
+                        category.label,
+                        selected = state.categoryId == category.id,
+                        onClick = { onEvent(FeedModeEvent.CategoryChanged(category.id)) })
                 }
             }
-            SrField(state.budgetRubles, { onEvent(FeedModeEvent.BudgetChanged(it)) }, "Общий бюджет, ₽", kind = SrFieldKind.Number, placeholder = "Необязательно", errorMessage = state.fieldError)
-            SrField(state.partySizeText, { onEvent(FeedModeEvent.PartySizeChanged(it)) }, "Человек", kind = SrFieldKind.Number, placeholder = "2", errorMessage = if (state.fieldError?.contains("человек") == true) state.fieldError else null)
+            SrField(
+                state.budgetRubles,
+                { onEvent(FeedModeEvent.BudgetChanged(it)) },
+                "Общий бюджет, ₽",
+                kind = SrFieldKind.Number,
+                placeholder = "Необязательно",
+                errorMessage = state.fieldError
+            )
+            SrField(
+                state.partySizeText,
+                { onEvent(FeedModeEvent.PartySizeChanged(it)) },
+                "Человек",
+                kind = SrFieldKind.Number,
+                placeholder = "2",
+                errorMessage = if (state.fieldError?.contains("человек") == true) state.fieldError else null
+            )
             state.feedError?.let { Text(it, style = SrType.Body, color = SrColors.Error) }
             if (state.busy) CircularProgressIndicator(color = SrColors.Primary)
-            SrButton("Показать подборку", { onEvent(FeedModeEvent.SubmitFilters) }, enabled = !state.busy, loading = state.busy)
+            SrButton(
+                "Показать подборку",
+                { onEvent(FeedModeEvent.SubmitFilters) },
+                enabled = !state.busy,
+                loading = state.busy
+            )
             Spacer(Modifier.height(24.dp))
         }
         return
@@ -130,35 +179,65 @@ fun FeedModeScreen(
     if (state.chosen != null) {
         val chosen = state.chosen
         val details = state.catalogDetails
-        val kindLabel = if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "К мероприятию" else "К месту"
+        val kindLabel =
+            if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "К мероприятию" else "К месту"
         Column(
-            modifier.fillMaxSize().background(FeedDesign.ScreenGradient).windowInsetsPadding(WindowInsets.statusBars)
+            modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            SrTopBar(title = if (details != null) "Подробности" else "Вы выбрали", onBack = if (details != null) ({ onEvent(FeedModeEvent.CloseCatalogDetails) }) else null)
+            SrTopBar(
+                title = if (details != null) "Подробности" else "Вы выбрали",
+                onBack = if (details != null) ({ onEvent(FeedModeEvent.CloseCatalogDetails) }) else null
+            )
             val cover = details?.coverUrl?.takeIf(String::isNotBlank) ?: chosen.coverUrl
-            Box(Modifier.fillMaxWidth().aspectRatio(0.92f).clip(SrShapes.Card).background(SrColors.Solid), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.fillMaxWidth().aspectRatio(0.92f).clip(SrShapes.Card)
+                    .background(SrColors.Solid), contentAlignment = Alignment.Center
+            ) {
                 FeedCover(cover, chosen.title, Modifier.fillMaxSize())
                 SrChip("Вы выбрали", selected = true, onClick = {})
             }
             Text(details?.title ?: chosen.title, style = SrType.Display, color = SrColors.Text)
             val categoryLabel = state.categories.firstOrNull { it.id == chosen.category }?.label
             val parameters = listOfNotNull(
-                (categoryLabel ?: state.categories.firstOrNull { it.id == details?.categoryId }?.label)?.takeIf(String::isNotBlank),
+                (categoryLabel
+                    ?: state.categories.firstOrNull { it.id == details?.categoryId }?.label)?.takeIf(
+                    String::isNotBlank
+                ),
                 (details?.priceLabel ?: chosen.priceLabel).takeIf(String::isNotBlank),
-                details?.address?.takeIf(String::isNotBlank) ?: chosen.addressOrDate.takeIf(String::isNotBlank),
+                details?.address?.takeIf(String::isNotBlank)
+                    ?: chosen.addressOrDate.takeIf(String::isNotBlank),
                 details?.startsAt?.let(::displayCatalogTime)?.takeIf(String::isNotBlank),
                 details?.admissionLabel,
             )
-            if (parameters.isNotEmpty()) Text(parameters.joinToString(" · "), style = SrType.Body, color = SrColors.Muted)
-            Text(details?.description ?: chosen.description.ifBlank { "Описание пока не добавлено." }, style = SrType.Body, color = SrColors.Text)
+            if (parameters.isNotEmpty()) Text(
+                parameters.joinToString(" · "),
+                style = SrType.Body,
+                color = SrColors.Muted
+            )
+            Text(
+                details?.description
+                    ?: chosen.description.ifBlank { "Описание пока не добавлено." },
+                style = SrType.Body,
+                color = SrColors.Text
+            )
             if (details == null) {
-                if (state.loadingDetails) CircularProgressIndicator(Modifier.size(32.dp), color = SrColors.Primary)
+                if (state.loadingDetails) CircularProgressIndicator(
+                    Modifier.size(32.dp),
+                    color = SrColors.Primary
+                )
                 state.detailsError?.let { Text(it, style = SrType.Label, color = SrColors.Error) }
-                SrButton(if (state.detailsError == null) kindLabel else "Повторить", { onEvent(if (state.detailsError == null) FeedModeEvent.OpenCatalogDetails else FeedModeEvent.RetryCatalogDetails) }, loading = state.loadingDetails, enabled = !state.loadingDetails)
+                SrButton(
+                    if (state.detailsError == null) kindLabel else "Повторить",
+                    { onEvent(if (state.detailsError == null) FeedModeEvent.OpenCatalogDetails else FeedModeEvent.RetryCatalogDetails) },
+                    loading = state.loadingDetails,
+                    enabled = !state.loadingDetails
+                )
             } else {
-                details.endsAt?.let(::displayCatalogTime)?.takeIf(String::isNotBlank)?.let { Text("До $it", style = SrType.Label, color = SrColors.Muted) }
+                details.endsAt?.let(::displayCatalogTime)?.takeIf(String::isNotBlank)
+                    ?.let { Text("До $it", style = SrType.Label, color = SrColors.Muted) }
             }
         }
         return
@@ -166,21 +245,41 @@ fun FeedModeScreen(
     if (state.cards.isNotEmpty() || state.feedError != null || state.feedExhausted) {
         val swipe = state.swipe
         val card = swipe.current
-        val landscape = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
-        Column(modifier.fillMaxSize().background(FeedDesign.ScreenGradient).windowInsetsPadding(WindowInsets.statusBars).then(if (landscape) Modifier.verticalScroll(rememberScrollState()) else Modifier).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            SrTopBar(title = if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "Выбор события" else "Выбор места", onBack = { onEvent(FeedModeEvent.ChangeFilters) }, actions = { })
+        val landscape =
+            LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
+        Column(
+            modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .then(if (landscape) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                .padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            SrTopBar(
+                title = if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "Выбор события" else "Выбор места",
+                onBack = { onEvent(FeedModeEvent.ChangeFilters) },
+                actions = { })
             Text(state.contextLabel, style = SrType.Label, color = SrColors.Muted)
             if (swipe.loadingNextPool) {
-                Box(Modifier.fillMaxWidth().height(if (landscape) 150.dp else 280.dp), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(
+                    Modifier.fillMaxWidth().height(if (landscape) 150.dp else 280.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         CircularProgressIndicator(color = SrColors.Primary)
                         Text("Обновляем подборку", style = SrType.Title, color = SrColors.Text)
-                        Text("Ищем новые варианты по вашим фильтрам", style = SrType.Body, color = SrColors.Muted)
+                        Text(
+                            "Ищем новые варианты по вашим фильтрам",
+                            style = SrType.Body,
+                            color = SrColors.Muted
+                        )
                     }
                 }
             } else if (card != null) {
                 val categoryLabel = state.categories.firstOrNull { it.id == card.category }?.label
-                val kindLabel = if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "Событие" else "Место"
+                val kindLabel =
+                    if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "Событие" else "Место"
                 val cardMetadata = listOfNotNull(
                     categoryLabel?.takeIf { it.isNotBlank() } ?: kindLabel,
                     card.priceLabel.takeIf { it.isNotBlank() },
@@ -190,28 +289,114 @@ fun FeedModeScreen(
                 val dragX = remember(card.ref) { Animatable(0f) }
                 fun decideWithAnimation(decision: SwipeDecision) {
                     scope.launch {
-                        dragX.animateTo(if (decision == SwipeDecision.LIKE) 900f else -900f, tween(180))
+                        dragX.animateTo(
+                            if (decision == SwipeDecision.LIKE) 900f else -900f,
+                            tween(180)
+                        )
                         onEvent(FeedModeEvent.SwipeDecided(decision))
                         dragX.snapTo(0f)
                     }
                 }
-                Box(Modifier.fillMaxWidth().height(if (landscape) 245.dp else 390.dp), contentAlignment = Alignment.Center) {
-                    if (swipe.index + 2 < swipe.cards.size) SrVoteCard(swipe.cards[swipe.index + 2].title, emptyList(), { SrArtwork(SrIllustration.VoteCompact, Modifier.fillMaxSize()) }, Modifier.fillMaxWidth().offset(y = 16.dp).graphicsLayer(rotationZ = 3f), size = SrVoteCardSize.Tall)
-                    if (swipe.index + 1 < swipe.cards.size) SrVoteCard(swipe.cards[swipe.index + 1].title, emptyList(), { SrArtwork(SrIllustration.VoteCompact, Modifier.fillMaxSize()) }, Modifier.fillMaxWidth().offset(y = 8.dp).graphicsLayer(rotationZ = -3f), size = SrVoteCardSize.Tall)
-                    SrVoteCard(card.title, emptyList(), { SrArtwork(SrIllustration.VoteCompact, Modifier.fillMaxSize(), card.title) }, Modifier.then(if (landscape) Modifier.width(250.dp).height(245.dp).verticalScroll(rememberScrollState()) else Modifier.fillMaxWidth()).graphicsLayer(translationX = dragX.value, rotationZ = dragX.value / 24f).pointerInput(card.ref) { detectHorizontalDragGestures(onHorizontalDrag = { _, amount -> scope.launch { dragX.snapTo(dragX.value + amount) } }, onDragEnd = { val decision = when { dragX.value > 80 -> SwipeDecision.LIKE; dragX.value < -80 -> SwipeDecision.SKIP; else -> null }; scope.launch { if (decision != null) { dragX.animateTo(if (decision == SwipeDecision.LIKE) 900f else -900f, tween(180)); onEvent(FeedModeEvent.SwipeDecided(decision)) }; dragX.animateTo(0f, tween(1)) } }) }, size = if (landscape) SrVoteCardSize.Compact else SrVoteCardSize.Tall, description = card.description.takeIf { it.isNotBlank() })
+                Box(
+                    Modifier.fillMaxWidth().height(if (landscape) 245.dp else 390.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (swipe.index + 2 < swipe.cards.size) SrVoteCard(
+                        swipe.cards[swipe.index + 2].title,
+                        emptyList(),
+                        { SrArtwork(SrIllustration.VoteCompact, Modifier.fillMaxSize()) },
+                        Modifier.fillMaxWidth().offset(y = 16.dp).graphicsLayer(rotationZ = 3f),
+                        size = SrVoteCardSize.Tall
+                    )
+                    if (swipe.index + 1 < swipe.cards.size) SrVoteCard(
+                        swipe.cards[swipe.index + 1].title,
+                        emptyList(),
+                        { SrArtwork(SrIllustration.VoteCompact, Modifier.fillMaxSize()) },
+                        Modifier.fillMaxWidth().offset(y = 8.dp).graphicsLayer(rotationZ = -3f),
+                        size = SrVoteCardSize.Tall
+                    )
+                    SrVoteCard(
+                        card.title,
+                        emptyList(),
+                        {
+                            SrArtwork(
+                                SrIllustration.VoteCompact,
+                                Modifier.fillMaxSize(),
+                                card.title
+                            )
+                        },
+                        Modifier.then(
+                            if (landscape) Modifier.width(250.dp).height(245.dp)
+                                .verticalScroll(rememberScrollState()) else Modifier.fillMaxWidth()
+                        ).graphicsLayer(translationX = dragX.value, rotationZ = dragX.value / 24f)
+                            .pointerInput(card.ref) {
+                                detectHorizontalDragGestures(onHorizontalDrag = { _, amount ->
+                                    scope.launch {
+                                        dragX.snapTo(dragX.value + amount)
+                                    }
+                                }, onDragEnd = {
+                                    val decision = when {
+                                        dragX.value > 80 -> SwipeDecision.LIKE; dragX.value < -80 -> SwipeDecision.SKIP; else -> null
+                                    }; scope.launch {
+                                    if (decision != null) {
+                                        dragX.animateTo(
+                                            if (decision == SwipeDecision.LIKE) 900f else -900f,
+                                            tween(180)
+                                        ); onEvent(FeedModeEvent.SwipeDecided(decision))
+                                    }; dragX.animateTo(0f, tween(1))
+                                }
+                                })
+                            },
+                        size = if (landscape) SrVoteCardSize.Compact else SrVoteCardSize.Tall,
+                        description = card.description.takeIf { it.isNotBlank() })
                 }
                 Text(cardMetadata.joinToString(" · "), style = SrType.Body, color = SrColors.Text)
-                Text("${(swipe.index + 1).coerceAtMost(swipe.cards.size)} / ${swipe.cards.size}", style = SrType.Label, color = SrColors.Muted)
-                if (!landscape) SrVoteActions(onPass = { decideWithAnimation(SwipeDecision.SKIP) }, onLike = { decideWithAnimation(SwipeDecision.LIKE) }, onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null, progress = swipe.progress)
-                else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { SrVoteActions(onPass = { decideWithAnimation(SwipeDecision.SKIP) }, onLike = { decideWithAnimation(SwipeDecision.LIKE) }, onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null, progress = swipe.progress) }
+                Text(
+                    "${(swipe.index + 1).coerceAtMost(swipe.cards.size)} / ${swipe.cards.size}",
+                    style = SrType.Label,
+                    color = SrColors.Muted
+                )
+                if (!landscape) SrVoteActions(
+                    onPass = { decideWithAnimation(SwipeDecision.SKIP) },
+                    onLike = { decideWithAnimation(SwipeDecision.LIKE) },
+                    onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null,
+                    progress = swipe.progress
+                )
+                else Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    SrVoteActions(
+                        onPass = { decideWithAnimation(SwipeDecision.SKIP) },
+                        onLike = { decideWithAnimation(SwipeDecision.LIKE) },
+                        onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null,
+                        progress = swipe.progress
+                    )
+                }
             } else if (state.feedExhausted) {
                 Text("Больше вариантов нет", style = SrType.Title, color = SrColors.Text)
-                Text("Под ваши параметры больше нет подходящих мест и мероприятий.", style = SrType.Body, color = SrColors.Muted)
+                Text(
+                    "Под ваши параметры больше нет подходящих мест и мероприятий.",
+                    style = SrType.Body,
+                    color = SrColors.Muted
+                )
             } else {
-                Text(state.feedError ?: "Не удалось обновить подборку", style = SrType.Body, color = SrColors.Error)
-                SrButton("Повторить", { onEvent(FeedModeEvent.RetryNextPage) }, style = SrButtonStyle.Secondary)
+                Text(
+                    state.feedError ?: "Не удалось обновить подборку",
+                    style = SrType.Body,
+                    color = SrColors.Error
+                )
+                SrButton(
+                    "Повторить",
+                    { onEvent(FeedModeEvent.RetryNextPage) },
+                    style = SrButtonStyle.Secondary
+                )
             }
-            if (!swipe.loadingNextPool) SrButton("Изменить фильтры", { onEvent(FeedModeEvent.ChangeFilters) }, style = SrButtonStyle.Secondary)
+            if (!swipe.loadingNextPool) SrButton(
+                "Изменить фильтры",
+                { onEvent(FeedModeEvent.ChangeFilters) },
+                style = SrButtonStyle.Secondary
+            )
         }
         return
     }
@@ -257,10 +442,17 @@ fun FeedModeScreen(
             }
             state.error?.let { message ->
                 Text(message, style = SrType.Label, color = SrColors.Error)
-                SrButton("Повторить", { onEvent(FeedModeEvent.RetryProfileCheck) }, style = SrButtonStyle.Secondary)
+                SrButton(
+                    "Повторить",
+                    { onEvent(FeedModeEvent.RetryProfileCheck) },
+                    style = SrButtonStyle.Secondary
+                )
             }
             if (state.busy) {
-                CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally), color = SrColors.Primary)
+                CircularProgressIndicator(
+                    Modifier.align(Alignment.CenterHorizontally),
+                    color = SrColors.Primary
+                )
             }
             Spacer(Modifier.height(96.dp))
         }
@@ -313,10 +505,14 @@ private fun ModeChoiceCard(
     onClick: () -> Unit,
 ) {
     SrChoiceSurface(
-        modifier = Modifier.fillMaxWidth().clickable(enabled, role = Role.Button, onClick = onClick),
+        modifier = Modifier.fillMaxWidth()
+            .clickable(enabled, role = Role.Button, onClick = onClick),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 SrGlyph(icon, tint = SrColors.Text)
                 Text(title, style = SrType.Title, color = SrColors.Text)
             }
@@ -336,7 +532,10 @@ private fun ProfileIncompleteNotice(busy: Boolean, onCompleteProfile: () -> Unit
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             SrGlyph(SrIcon.Warning, tint = SrColors.Error)
             Text("Нужен завершённый профиль", style = SrType.Title, color = SrColors.Text)
         }
@@ -385,7 +584,9 @@ private fun FeedCover(url: String?, title: String, modifier: Modifier = Modifier
                 contentDescription = title,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
-                onState = { state -> if (state is AsyncImagePainter.State.Error) imageFailed = true },
+                onState = { state ->
+                    if (state is AsyncImagePainter.State.Error) imageFailed = true
+                },
             )
         }
     }

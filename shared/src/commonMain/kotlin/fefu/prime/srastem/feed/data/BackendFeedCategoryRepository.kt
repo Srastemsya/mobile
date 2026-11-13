@@ -11,10 +11,14 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 
 class BackendFeedCategoryRepository(private val api: BackendApi) : FeedCategoryRepository {
-    override suspend fun getCategories(): List<FeedCategory> = api.get("/v1/catalog/categories").jsonObject["items"]?.jsonArray.orEmpty().map { element ->
-        val item = element.jsonObject
-        FeedCategory(item.string("id").orEmpty(), item.string("label").orEmpty(), item["kinds"]?.jsonArray.orEmpty().mapNotNull { raw ->
-            raw.jsonPrimitive.contentOrNull?.let { runCatching { FeedKind.valueOf(it) }.getOrNull() }
-        })
-    }
+    override suspend fun getCategories(): List<FeedCategory> =
+        api.get("/v1/catalog/categories").jsonObject["items"]?.jsonArray.orEmpty().map { element ->
+            val item = element.jsonObject
+            FeedCategory(
+                item.string("id").orEmpty(),
+                item.string("label").orEmpty(),
+                item["kinds"]?.jsonArray.orEmpty().mapNotNull { raw ->
+                    raw.jsonPrimitive.contentOrNull?.let { runCatching { FeedKind.valueOf(it) }.getOrNull() }
+                })
+        }
 }

@@ -19,8 +19,9 @@ class EventMapCatalogRepository(private val events: EventRepository) : MapCatalo
                 EventCategory.ACTIVE -> MapMarkerIcon.Activity
                 else -> MapMarkerIcon.Event
             }
-            val places = event.capacity?.let { "Записалось ${event.participants.size} · осталось ${event.remainingPlaces} места" }
-                ?: "Свободный вход"
+            val places =
+                event.capacity?.let { "Записалось ${event.participants.size} · осталось ${event.remainingPlaces} места" }
+                    ?: "Свободный вход"
             MapMarker(
                 id = event.id,
                 location = GeoPoint(event.latitude, event.longitude),

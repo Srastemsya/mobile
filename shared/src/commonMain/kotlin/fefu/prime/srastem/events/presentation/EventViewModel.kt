@@ -70,14 +70,25 @@ class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
     }
 
     fun openCreate() = _state.update {
-        it.copy(page = EventPage.CREATE_LOCATION, draft = EventDraft(), selectedEventId = null, error = null)
+        it.copy(
+            page = EventPage.CREATE_LOCATION,
+            draft = EventDraft(),
+            selectedEventId = null,
+            error = null
+        )
     }
 
     fun chooseLocation(address: String, latitude: Double, longitude: Double) = _state.update {
-        it.copy(page = EventPage.CREATE_FORM, draft = it.draft.copy(address = address, latitude = latitude, longitude = longitude), error = null)
+        it.copy(
+            page = EventPage.CREATE_FORM,
+            draft = it.draft.copy(address = address, latitude = latitude, longitude = longitude),
+            error = null
+        )
     }
 
-    fun updateDraft(transform: (EventDraft) -> EventDraft) = _state.update { it.copy(draft = transform(it.draft), error = null) }
+    fun updateDraft(transform: (EventDraft) -> EventDraft) =
+        _state.update { it.copy(draft = transform(it.draft), error = null) }
+
     fun clearError() = _state.update { it.copy(error = null) }
 
     fun publish() {
@@ -111,7 +122,9 @@ class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
 
     fun openOrganizer() = _state.update { it.copy(page = EventPage.ORGANIZER, error = null) }
 
-    fun askRemoveParticipant(participant: EventParticipant) = _state.update { it.copy(pendingParticipant = participant) }
+    fun askRemoveParticipant(participant: EventParticipant) =
+        _state.update { it.copy(pendingParticipant = participant) }
+
     fun cancelRemoveParticipant() = _state.update { it.copy(pendingParticipant = null) }
 
     fun confirmRemoveParticipant() {
@@ -135,17 +148,28 @@ class EventViewModel(private val useCases: EventUseCases) : ViewModel() {
         _state.update { state ->
             when (state.page) {
                 EventPage.LIST -> state
-                EventPage.DETAIL -> state.copy(page = EventPage.LIST, selectedEventId = null, error = null)
+                EventPage.DETAIL -> state.copy(
+                    page = EventPage.LIST,
+                    selectedEventId = null,
+                    error = null
+                )
+
                 EventPage.CREATE_LOCATION -> state.copy(page = EventPage.LIST, error = null)
                 EventPage.CREATE_FORM -> state.copy(page = EventPage.CREATE_LOCATION, error = null)
-                EventPage.CREATED -> state.copy(page = EventPage.LIST, selectedEventId = null, error = null)
+                EventPage.CREATED -> state.copy(
+                    page = EventPage.LIST,
+                    selectedEventId = null,
+                    error = null
+                )
+
                 EventPage.JOINED -> state.copy(page = EventPage.DETAIL, error = null)
                 EventPage.ORGANIZER -> state.copy(page = EventPage.DETAIL, error = null)
             }
         }
     }
 
-    fun selectedEvent(): SrEvent? = _state.value.events.firstOrNull { it.id == _state.value.selectedEventId }
+    fun selectedEvent(): SrEvent? =
+        _state.value.events.firstOrNull { it.id == _state.value.selectedEventId }
 
     private fun perform(action: suspend () -> Unit) {
         viewModelScope.launch {

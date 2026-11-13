@@ -9,8 +9,18 @@ class MockHomeRepository : HomeRepository {
     override suspend fun getHome() = HomeContent(
         city = "Владивосток",
         collections = listOf(
-            HomeCollection("evening-bars", "Вечерние бары\nСветланской", "5 мест · от 800 ₽", "Подборка"),
-            HomeCollection("russky-weekend", "Выходные на\nРусском", "3 события · от 1 500 ₽", "Подборка"),
+            HomeCollection(
+                "evening-bars",
+                "Вечерние бары\nСветланской",
+                "5 мест · от 800 ₽",
+                "Подборка"
+            ),
+            HomeCollection(
+                "russky-weekend",
+                "Выходные на\nРусском",
+                "3 события · от 1 500 ₽",
+                "Подборка"
+            ),
         ),
     )
 }

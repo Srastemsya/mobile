@@ -7,11 +7,13 @@ import fefu.prime.srastem.feed.domain.FeedPage
 import fefu.prime.srastem.feed.domain.FeedRepository
 import fefu.prime.srastem.feed.domain.FeedRef
 import kotlinx.serialization.json.jsonObject
+
 /** Одиночная выдача подборки через общий `BackendApi`: `GET /v1/feed/candidates`. */
 class BackendFeedRepository(private val api: BackendApi) : FeedRepository {
 
     override suspend fun getCandidates(filters: FeedFilters, cursor: String?): FeedPage = try {
-        FeedMappers.page(api.get(FeedContract.candidatesQuery(filters, cursor)).jsonObject).withResolvedCoverUrls(api::resolveMediaUrl)
+        FeedMappers.page(api.get(FeedContract.candidatesQuery(filters, cursor)).jsonObject)
+            .withResolvedCoverUrls(api::resolveMediaUrl)
     } catch (error: BackendException) {
         throw FeedMappers.errorOf(error)
     } catch (error: Exception) {
@@ -19,8 +21,10 @@ class BackendFeedRepository(private val api: BackendApi) : FeedRepository {
     }
 
     override suspend fun getCatalogDetails(ref: FeedRef) = try {
-        val json = api.get("/v1/catalog/${ref.kind.name}/${ref.id.encodeQueryComponent()}").jsonObject
-        FeedMappers.details(json).let { details -> details.copy(coverUrl = api.resolveMediaUrl(details.coverUrl)) }
+        val json =
+            api.get("/v1/catalog/${ref.kind.name}/${ref.id.encodeQueryComponent()}").jsonObject
+        FeedMappers.details(json)
+            .let { details -> details.copy(coverUrl = api.resolveMediaUrl(details.coverUrl)) }
     } catch (error: BackendException) {
         throw FeedMappers.errorOf(error)
     } catch (error: Exception) {

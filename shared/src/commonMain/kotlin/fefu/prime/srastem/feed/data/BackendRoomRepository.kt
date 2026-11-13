@@ -37,11 +37,13 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
 
     override suspend fun createInvite(roomId: String): RoomInvite = guard {
         val scope = "invite-room:$roomId"
-        val invite = api.postEmpty("/v1/rooms/$roomId/invites", api.idempotencyKey(scope)).value?.jsonObject
-            ?: error("Сервер не вернул приглашение")
+        val invite =
+            api.postEmpty("/v1/rooms/$roomId/invites", api.idempotencyKey(scope)).value?.jsonObject
+                ?: error("Сервер не вернул приглашение")
         api.clearIdempotencyKey(scope)
         RoomInvite(
-            url = invite["url"]?.jsonPrimitive?.content ?: error("Сервер не вернул ссылку приглашения"),
+            url = invite["url"]?.jsonPrimitive?.content
+                ?: error("Сервер не вернул ссылку приглашения"),
             expiresAt = invite["expiresAt"]?.takeUnless { it == JsonNull }?.jsonPrimitive?.content,
         )
     }
@@ -59,7 +61,11 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
 
     override suspend fun startRoom(roomId: String, filters: FeedFilters): RoomSnapshot = guard {
         val scope = "start-room:$roomId"
-        val started = api.post("/v1/rooms/$roomId/start", FeedContract.startBody(filters), api.idempotencyKey(scope)).value?.jsonObject
+        val started = api.post(
+            "/v1/rooms/$roomId/start",
+            FeedContract.startBody(filters),
+            api.idempotencyKey(scope)
+        ).value?.jsonObject
             ?: error("Сервер не вернул комнату")
         api.clearIdempotencyKey(scope)
         FeedMappers.room(started, api.userId())
@@ -94,9 +100,11 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
         emit(room)
         while (isPolling(room)) {
             try {
-                val result = api.getResult("/v1/rooms/$roomId?afterVersion=${room.version}&waitSeconds=25")
+                val result =
+                    api.getResult("/v1/rooms/$roomId?afterVersion=${room.version}&waitSeconds=25")
                 if (result.status == 204) continue
-                val next = result.value?.jsonObject?.let { FeedMappers.room(it, api.userId()) } ?: continue
+                val next =
+                    result.value?.jsonObject?.let { FeedMappers.room(it, api.userId()) } ?: continue
                 if (next.version >= room.version) {
                     room = next
                     emit(room)
@@ -111,8 +119,8 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
 
     private fun isPolling(room: RoomSnapshot): Boolean =
         room.phase != fefu.prime.srastem.feed.domain.RoomPhase.MATCHED &&
-            room.phase != fefu.prime.srastem.feed.domain.RoomPhase.EXHAUSTED &&
-            room.phase != fefu.prime.srastem.feed.domain.RoomPhase.CLOSED
+                room.phase != fefu.prime.srastem.feed.domain.RoomPhase.EXHAUSTED &&
+                room.phase != fefu.prime.srastem.feed.domain.RoomPhase.CLOSED
 
     private inline fun <T> guard(block: () -> T): T = try {
         block()

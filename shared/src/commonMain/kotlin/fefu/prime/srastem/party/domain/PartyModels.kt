@@ -113,7 +113,9 @@ fun localDateOf(label: String): String? {
     }
     if (label.contains("Сегодня", ignoreCase = true)) {
         val (year, month, day) = fefu.prime.srastem.currentDateParts()
-        return "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+        return "${year.toString().padStart(4, '0')}-${
+            month.toString().padStart(2, '0')
+        }-${day.toString().padStart(2, '0')}"
     }
     return null
 }

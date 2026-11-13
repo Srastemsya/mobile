@@ -47,17 +47,33 @@ internal fun MapFilterSheet(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("Фильтры", style = SrType.Heading, color = SrColors.Text, modifier = Modifier.weight(1f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Фильтры",
+                    style = SrType.Heading,
+                    color = SrColors.Text,
+                    modifier = Modifier.weight(1f)
+                )
                 SrIconButton(SrIcon.Close, "Закрыть фильтры", onClose)
             }
             FilterSection("Когда", listOf("Любая дата", "Сегодня", "Выходные"), selection.date) {
                 onSelectionChange(selection.copy(date = it))
             }
-            FilterSection("Бюджет на человека", listOf("Любой", "До 1 000 ₽", "До 3 000 ₽"), selection.budget) {
+            FilterSection(
+                "Бюджет на человека",
+                listOf("Любой", "До 1 000 ₽", "До 3 000 ₽"),
+                selection.budget
+            ) {
                 onSelectionChange(selection.copy(budget = it))
             }
-            FilterSection("Категория", listOf("Все", "Квизы", "Бары", "Активности"), selection.category) {
+            FilterSection(
+                "Категория",
+                listOf("Все", "Квизы", "Бары", "Активности"),
+                selection.category
+            ) {
                 onSelectionChange(selection.copy(category = it))
             }
             SrSelection(
@@ -66,13 +82,23 @@ internal fun MapFilterSheet(
                 onChange = { onSelectionChange(selection.copy(onlyFreeSpots = it)) },
             )
             SrButton("Показать результаты", onApply, Modifier.fillMaxWidth())
-            SrButton("Сбросить фильтры", onReset, Modifier.fillMaxWidth(), style = SrButtonStyle.Secondary)
+            SrButton(
+                "Сбросить фильтры",
+                onReset,
+                Modifier.fillMaxWidth(),
+                style = SrButtonStyle.Secondary
+            )
         }
     }
 }
 
 @Composable
-private fun FilterSection(title: String, options: List<String>, selected: String, onSelect: (String) -> Unit) {
+private fun FilterSection(
+    title: String,
+    options: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(title, style = SrType.Label, color = SrColors.Text)
         Row(

@@ -24,8 +24,12 @@ class EventUseCases(private val repository: EventRepository) {
     suspend fun createEvent(draft: EventDraft) = repository.createEvent(draft)
     suspend fun joinEvent(eventId: String, userId: String) = repository.joinEvent(eventId, userId)
     suspend fun leaveEvent(eventId: String, userId: String) = repository.leaveEvent(eventId, userId)
-    suspend fun removeParticipant(eventId: String, organizerId: String, participantId: String) = repository.removeParticipant(eventId, organizerId, participantId)
-    suspend fun deleteEvent(eventId: String, organizerId: String) = repository.deleteEvent(eventId, organizerId)
+    suspend fun removeParticipant(eventId: String, organizerId: String, participantId: String) =
+        repository.removeParticipant(eventId, organizerId, participantId)
+
+    suspend fun deleteEvent(eventId: String, organizerId: String) =
+        repository.deleteEvent(eventId, organizerId)
+
     suspend fun refreshEvents() = repository.refreshEvents()
     suspend fun getEventCategories() = repository.getEventCategories()
 }

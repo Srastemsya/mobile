@@ -11,7 +11,13 @@ data class HomeCollection(
 
 data class HomeQuickCategory(val id: String, val label: String, val kinds: List<String>)
 
-data class HomeUpcoming(val id: String, val title: String, val categoryId: String, val startsAt: String, val address: String)
+data class HomeUpcoming(
+    val id: String,
+    val title: String,
+    val categoryId: String,
+    val startsAt: String,
+    val address: String
+)
 
 data class HomeContent(
     val city: String,

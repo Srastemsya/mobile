@@ -25,12 +25,24 @@ private val MapPinShape = GenericShape { size, _ ->
     cubicTo(size.width * .43f, size.height * .80f, 0f, size.height * .59f, 0f, size.height * .36f)
     cubicTo(0f, size.height * .14f, size.width * .18f, 0f, size.width * .5f, 0f)
     cubicTo(size.width * .82f, 0f, size.width, size.height * .14f, size.width, size.height * .36f)
-    cubicTo(size.width, size.height * .59f, size.width * .57f, size.height * .80f, size.width / 2f, size.height)
+    cubicTo(
+        size.width,
+        size.height * .59f,
+        size.width * .57f,
+        size.height * .80f,
+        size.width / 2f,
+        size.height
+    )
     close()
 }
 
 @Composable
-fun SrMapPin(type: MapPinType, selected: Boolean, modifier: Modifier = Modifier, description: String? = null) {
+fun SrMapPin(
+    type: MapPinType,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    description: String? = null
+) {
     val icon = when (type) {
         MapPinType.Event -> SrIcon.Events
         MapPinType.Place -> SrIcon.Location
@@ -46,14 +58,24 @@ fun SrMapPin(type: MapPinType, selected: Boolean, modifier: Modifier = Modifier,
     Box(
         modifier.size(48.dp, 58.dp).shadow(if (selected) 8.dp else 4.dp, MapPinShape)
             .background(Color.White, MapPinShape)
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
+            .then(if (description != null) Modifier.semantics {
+                contentDescription = description
+            } else Modifier),
         contentAlignment = Alignment.TopCenter,
     ) {
         Box(
-            Modifier.padding(top = 4.dp).size(39.dp).background(if (selected) accent else accent.copy(alpha = .13f), androidx.compose.foundation.shape.CircleShape),
+            Modifier.padding(top = 4.dp).size(39.dp).background(
+                if (selected) accent else accent.copy(alpha = .13f),
+                androidx.compose.foundation.shape.CircleShape
+            ),
             contentAlignment = Alignment.Center,
         ) {
-            SrGlyph(icon, modifier = Modifier.fillMaxSize().padding(9.dp), tint = if (selected) Color.White else accent, size = 21.dp)
+            SrGlyph(
+                icon,
+                modifier = Modifier.fillMaxSize().padding(9.dp),
+                tint = if (selected) Color.White else accent,
+                size = 21.dp
+            )
         }
     }
 }

@@ -51,7 +51,10 @@ internal fun MapSearchScreen(
             title = if (isResults) "Результаты" else "Поиск",
             onBack = onBack,
             actions = {
-                if (query.isNotEmpty()) SrIconButton(SrIcon.Close, "Очистить поиск", onClick =  { onQueryChange("") })
+                if (query.isNotEmpty()) SrIconButton(
+                    SrIcon.Close,
+                    "Очистить поиск",
+                    onClick = { onQueryChange("") })
             },
         )
         SrField(
@@ -85,10 +88,19 @@ internal fun MapSearchScreen(
             if (suggestions.isNotEmpty()) {
                 Text("Подсказки", style = SrType.Title, color = SrColors.Text)
                 suggestions.take(5).forEach { suggestion ->
-                    SrNotificationRow(suggestion, "Найдено в каталоге", unread = false, icon = SrIcon.Search, onOpen = { onChooseQuery(suggestion) })
+                    SrNotificationRow(
+                        suggestion,
+                        "Найдено в каталоге",
+                        unread = false,
+                        icon = SrIcon.Search,
+                        onOpen = { onChooseQuery(suggestion) })
                 }
             }
-            Text("Найдено ${results.size} ${resultsWord(results.size)}", style = SrType.Caption, color = SrColors.Muted)
+            Text(
+                "Найдено ${results.size} ${resultsWord(results.size)}",
+                style = SrType.Caption,
+                color = SrColors.Muted
+            )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 results.forEach { marker ->
                     val (icon, type) = when (marker.icon) {

@@ -173,7 +173,12 @@ private fun EventPosterCard(event: SrEvent, onClick: () -> Unit) {
 private fun EventHero(event: SrEvent, modifier: Modifier = Modifier) {
     SrEventCover(modifier) {
         if (event.coverUri != null) {
-            AsyncImage(event.coverUri, contentDescription = event.title, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            AsyncImage(
+                event.coverUri,
+                contentDescription = event.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         } else {
             SrArtwork(SrIllustration.EventThumbnail, Modifier.fillMaxSize(), event.title)
         }
@@ -309,7 +314,13 @@ private fun CreateLocationPage(vm: EventViewModel) {
                 modifier = Modifier.fillMaxSize(),
                 onNavigate = {},
                 locationPickerMode = true,
-                onLocationSelected = { marker -> vm.chooseLocation(marker.title, marker.location.latitude, marker.location.longitude) },
+                onLocationSelected = { marker ->
+                    vm.chooseLocation(
+                        marker.title,
+                        marker.location.latitude,
+                        marker.location.longitude
+                    )
+                },
             )
         }
     }
@@ -331,7 +342,14 @@ private fun CreateEventPage(state: EventUiState, vm: EventViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     onUpload = openPicker,
                     cover = if (state.draft.coverUri == null) null else {
-                        { AsyncImage(state.draft.coverUri, contentDescription = "Обложка события", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
+                        {
+                            AsyncImage(
+                                state.draft.coverUri,
+                                contentDescription = "Обложка события",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     },
                 )
             }
@@ -409,7 +427,12 @@ private fun CreateEventPage(state: EventUiState, vm: EventViewModel) {
                         modifier = Modifier.weight(1f),
                         kind = SrFieldKind.Number
                     )
-                    Text("Участие бесплатное", Modifier.align(Alignment.CenterVertically).weight(1f), style = SrType.Caption, color = SrColors.Muted)
+                    Text(
+                        "Участие бесплатное",
+                        Modifier.align(Alignment.CenterVertically).weight(1f),
+                        style = SrType.Caption,
+                        color = SrColors.Muted
+                    )
                 }
             }
         }
@@ -429,7 +452,11 @@ private fun CreateEventPage(state: EventUiState, vm: EventViewModel) {
 }
 
 @Composable
-private fun CategoryPicker(draft: EventDraft, categories: List<fefu.prime.srastem.events.domain.EventCatalogCategory>, vm: EventViewModel) {
+private fun CategoryPicker(
+    draft: EventDraft,
+    categories: List<fefu.prime.srastem.events.domain.EventCatalogCategory>,
+    vm: EventViewModel
+) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Категория", style = SrType.Label, color = SrColors.Text)
         Row(
@@ -553,12 +580,12 @@ private fun OrganizerPage(event: SrEvent, state: EventUiState, vm: EventViewMode
         }
         Spacer(Modifier.height(12.dp))
         if (event.canDelete) SrButton(
-                "Удалить событие",
-                vm::deleteSelectedEvent,
-                Modifier.fillMaxWidth(),
-                style = SrButtonStyle.Destructive,
-                enabled = !state.isBusy
-            )
+            "Удалить событие",
+            vm::deleteSelectedEvent,
+            Modifier.fillMaxWidth(),
+            style = SrButtonStyle.Destructive,
+            enabled = !state.isBusy
+        )
     }
 }
 

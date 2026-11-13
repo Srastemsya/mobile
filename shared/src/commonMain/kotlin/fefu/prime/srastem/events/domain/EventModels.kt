@@ -52,7 +52,11 @@ data class EventDraft(
 
 data class EventCatalogCategory(val id: String, val label: String)
 
-fun eventAttendanceSummary(confirmedCount: Int?, capacity: Int?, remainingCount: Int? = null): String? {
+fun eventAttendanceSummary(
+    confirmedCount: Int?,
+    capacity: Int?,
+    remainingCount: Int? = null
+): String? {
     if (capacity == null) return null
     val confirmed = confirmedCount ?: 0
     val remaining = remainingCount ?: (capacity - confirmed).coerceAtLeast(0)

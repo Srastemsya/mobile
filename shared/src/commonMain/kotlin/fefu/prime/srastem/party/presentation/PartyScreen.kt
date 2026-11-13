@@ -79,11 +79,21 @@ import ru.srastemsya.uikit.SrIllustration
 import ru.srastemsya.uikit.SrArtwork
 
 @Composable
-fun PartyScreen(viewModel: PartyViewModel, onOpenEvent: (String) -> Unit = {}, onOpenPlace: () -> Unit = {}) {
+fun PartyScreen(
+    viewModel: PartyViewModel,
+    onOpenEvent: (String) -> Unit = {},
+    onOpenPlace: () -> Unit = {}
+) {
     val state by viewModel.state.collectAsState()
     Column(
         Modifier.fillMaxSize().background(
-            Brush.horizontalGradient(listOf(Color(0xFFF8F8FD), Color(0xFFECECFF), Color(0xFFD8D8FF)))
+            Brush.horizontalGradient(
+                listOf(
+                    Color(0xFFF8F8FD),
+                    Color(0xFFECECFF),
+                    Color(0xFFD8D8FF)
+                )
+            )
         ).windowInsetsPadding(WindowInsets.statusBars).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -117,22 +127,46 @@ fun PartyScreen(viewModel: PartyViewModel, onOpenEvent: (String) -> Unit = {}, o
             PartyPage.WAITING -> WaitingPage(state, viewModel)
             PartyPage.RESULT -> ResultPage(state, viewModel, onOpenEvent, onOpenPlace)
         }
-        if (state.busy) CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally), color = SrColors.Primary)
+        if (state.busy) CircularProgressIndicator(
+            Modifier.align(Alignment.CenterHorizontally),
+            color = SrColors.Primary
+        )
     }
 }
 
 @Composable
 private fun ModePage(vm: PartyViewModel) {
     Text("Выбираем вместе", style = SrType.Display, color = SrColors.Text)
-    Text("Найдите место или событие, которое понравится всей компании.", style = SrType.Body, color = SrColors.Muted)
-    ChoiceCard("На одном устройстве", "Смотрите карточки вместе на одном телефоне и задайте общий бюджет.", vm::openSingleDevice)
-    ChoiceCard("На нескольких устройствах", "Создайте комнату и пригласите друзей. У каждого будет своя лента.", vm::openCreate)
-    SrButton("Присоединиться по ссылке", vm::openJoin, Modifier.fillMaxWidth(), style = ru.srastemsya.uikit.SrButtonStyle.Secondary)
+    Text(
+        "Найдите место или событие, которое понравится всей компании.",
+        style = SrType.Body,
+        color = SrColors.Muted
+    )
+    ChoiceCard(
+        "На одном устройстве",
+        "Смотрите карточки вместе на одном телефоне и задайте общий бюджет.",
+        vm::openSingleDevice
+    )
+    ChoiceCard(
+        "На нескольких устройствах",
+        "Создайте комнату и пригласите друзей. У каждого будет своя лента.",
+        vm::openCreate
+    )
+    SrButton(
+        "Присоединиться по ссылке",
+        vm::openJoin,
+        Modifier.fillMaxWidth(),
+        style = ru.srastemsya.uikit.SrButtonStyle.Secondary
+    )
 }
 
 @Composable
 private fun ChoiceCard(title: String, description: String, onClick: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(SrShapes.Card).background(SrColors.Glass).border(1.dp, SrColors.GlassEdge, SrShapes.Card).clickable(onClick = onClick).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        Modifier.fillMaxWidth().clip(SrShapes.Card).background(SrColors.Glass)
+            .border(1.dp, SrColors.GlassEdge, SrShapes.Card).clickable(onClick = onClick)
+            .padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Text(title, style = SrType.Title, color = SrColors.Text)
         Text(description, style = SrType.Body, color = SrColors.Muted)
     }
@@ -143,7 +177,12 @@ private fun CreatePage(state: PartyUiState, vm: PartyViewModel) {
     Text("Создайте комнату", style = SrType.Display, color = SrColors.Text)
     Text("Друзья смогут присоединиться по ссылке.", style = SrType.Body, color = SrColors.Muted)
     SrField(state.roomName, vm::setRoomName, "Название комнаты", placeholder = "Вечер пятницы")
-    SrField(state.participantName, vm::setParticipantName, "Ваше имя", placeholder = "Как вас представить")
+    SrField(
+        state.participantName,
+        vm::setParticipantName,
+        "Ваше имя",
+        placeholder = "Как вас представить"
+    )
     Spacer(Modifier.height(2.dp))
     SrButton("Создать комнату", vm::createRoom, Modifier.fillMaxWidth(), loading = state.busy)
 }
@@ -151,9 +190,18 @@ private fun CreatePage(state: PartyUiState, vm: PartyViewModel) {
 @Composable
 private fun JoinPage(state: PartyUiState, vm: PartyViewModel) {
     Text("Присоединитесь к друзьям", style = SrType.Display, color = SrColors.Text)
-    Text("Откройте ссылку-приглашение или вставьте код комнаты.", style = SrType.Body, color = SrColors.Muted)
+    Text(
+        "Откройте ссылку-приглашение или вставьте код комнаты.",
+        style = SrType.Body,
+        color = SrColors.Muted
+    )
     SrField(state.participantName, vm::setParticipantName, "Ваше имя")
-    SrField(state.roomCode, vm::setRoomCode, "Код или ссылка", placeholder = "srastem://party/123456")
+    SrField(
+        state.roomCode,
+        vm::setRoomCode,
+        "Код или ссылка",
+        placeholder = "srastem://party/123456"
+    )
     SrButton("Войти в комнату", vm::joinRoom, Modifier.fillMaxWidth(), loading = state.busy)
 }
 
@@ -168,9 +216,21 @@ private fun LobbyPage(state: PartyUiState, vm: PartyViewModel) {
         room.participants.take(4).forEach { Avatar(it.name) }
         if (room.participants.size > 4) Avatar("+${room.participants.size - 4}")
     }
-    Text("${room.participants.size} участник(ов) подключено", style = SrType.Label, color = SrColors.Muted)
-    Column(Modifier.clip(SrShapes.Panel).background(SrColors.Solid).border(1.dp, SrColors.Border, SrShapes.Panel).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (state.copied) "Ссылка готова" else "Пригласить в комнату", style = SrType.Title, color = SrColors.Text)
+    Text(
+        "${room.participants.size} участник(ов) подключено",
+        style = SrType.Label,
+        color = SrColors.Muted
+    )
+    Column(
+        Modifier.clip(SrShapes.Panel).background(SrColors.Solid)
+            .border(1.dp, SrColors.Border, SrShapes.Panel).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            if (state.copied) "Ссылка готова" else "Пригласить в комнату",
+            style = SrType.Title,
+            color = SrColors.Text
+        )
         Text(session.invitationUrl, style = SrType.Body, color = SrColors.Primary)
         Text("Поделитесь ссылкой с друзьями.", style = SrType.Body, color = SrColors.Muted)
         SrButton(if (state.copied) "Ссылка скопирована" else "Скопировать ссылку", {
@@ -195,22 +255,64 @@ private fun FiltersPage(state: PartyUiState, vm: PartyViewModel) {
     )
     Text("Тип подборки", style = SrType.Label, color = SrColors.Muted)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SrChip("Места", selected = state.filters.feedType == PartyFeedType.PLACES, onClick = { vm.updateFilters { it.copy(feedType = PartyFeedType.PLACES, category = PartyCategory.ALL) } })
-        SrChip("События", selected = state.filters.feedType == PartyFeedType.EVENTS, onClick = { vm.updateFilters { it.copy(feedType = PartyFeedType.EVENTS, category = PartyCategory.ALL) } })
+        SrChip(
+            "Места",
+            selected = state.filters.feedType == PartyFeedType.PLACES,
+            onClick = {
+                vm.updateFilters {
+                    it.copy(
+                        feedType = PartyFeedType.PLACES,
+                        category = PartyCategory.ALL
+                    )
+                }
+            })
+        SrChip(
+            "События",
+            selected = state.filters.feedType == PartyFeedType.EVENTS,
+            onClick = {
+                vm.updateFilters {
+                    it.copy(
+                        feedType = PartyFeedType.EVENTS,
+                        category = PartyCategory.ALL
+                    )
+                }
+            })
     }
     Text("Категории", style = SrType.Label, color = SrColors.Muted)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         val categories = if (state.filters.feedType == PartyFeedType.PLACES) {
-            listOf(PartyCategory.ALL to "Все", PartyCategory.FOOD to "Еда и бары", PartyCategory.ACTIVITIES to "Активности")
+            listOf(
+                PartyCategory.ALL to "Все",
+                PartyCategory.FOOD to "Еда и бары",
+                PartyCategory.ACTIVITIES to "Активности"
+            )
         } else {
             listOf(PartyCategory.ALL to "Все", PartyCategory.ACTIVITIES to "Активности")
         }
         categories.forEach { (category, label) ->
-            SrChip(label, selected = state.filters.category == category, onClick = { vm.updateFilters { it.copy(category = category) } })
+            SrChip(
+                label,
+                selected = state.filters.category == category,
+                onClick = { vm.updateFilters { it.copy(category = category) } })
         }
     }
-    SrField(state.filters.budgetPerPerson.toString(), { value -> vm.updateFilters { it.copy(budgetPerPerson = value.filter(Char::isDigit).toIntOrNull() ?: 0) } }, "Бюджет на человека, ₽", kind = SrFieldKind.Number)
-    SrField(state.filters.whenLabel, { value -> vm.updateFilters { it.copy(whenLabel = value) } }, "Когда")
+    SrField(
+        state.filters.budgetPerPerson.toString(),
+        { value ->
+            vm.updateFilters {
+                it.copy(
+                    budgetPerPerson = value.filter(Char::isDigit).toIntOrNull() ?: 0
+                )
+            }
+        },
+        "Бюджет на человека, ₽",
+        kind = SrFieldKind.Number
+    )
+    SrField(
+        state.filters.whenLabel,
+        { value -> vm.updateFilters { it.copy(whenLabel = value) } },
+        "Когда"
+    )
     Spacer(Modifier.height(2.dp))
     SrButton(
         "Запустить выбор",
@@ -225,13 +327,33 @@ private fun FeedPage(state: PartyUiState, vm: PartyViewModel) {
     val session = state.session
     val items = session?.room?.items ?: state.localItems
     if (state.isSingleDevice) {
-        Text("Одно устройство · общий бюджет", style = SrType.Caption, color = SrColors.Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Text(
+            "Одно устройство · общий бюджет",
+            style = SrType.Caption,
+            color = SrColors.Muted,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
     } else {
         val room = session?.room ?: return
-        Text("Комната: ${room.name}", style = SrType.Caption, color = SrColors.Muted, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "Комната: ${room.name}",
+            style = SrType.Caption,
+            color = SrColors.Muted,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             room.participants.take(4).forEach { Avatar(it.name, size = 32.dp) }
-            Spacer(Modifier.width(4.dp)); Text("${room.participants.count { it.completedFeed }}/${room.participants.size} завершили", style = SrType.Caption, color = SrColors.Muted)
+            Spacer(Modifier.width(4.dp)); Text(
+            "${room.participants.count { it.completedFeed }}/${room.participants.size} завершили",
+            style = SrType.Caption,
+            color = SrColors.Muted
+        )
         }
     }
     val item = items.getOrNull(state.itemIndex)
@@ -251,7 +373,11 @@ private fun FeedPage(state: PartyUiState, vm: PartyViewModel) {
 }
 
 @Composable
-private fun SwipeablePartyDeck(items: List<PartyItem>, itemIndex: Int, onVote: (PartyVote) -> Unit) {
+private fun SwipeablePartyDeck(
+    items: List<PartyItem>,
+    itemIndex: Int,
+    onVote: (PartyVote) -> Unit
+) {
     val current = items.getOrNull(itemIndex) ?: return
     val queuedItems = items.drop(itemIndex + 1).take(3)
     var observedItemCount by remember { mutableIntStateOf(items.size) }
@@ -262,7 +388,10 @@ private fun SwipeablePartyDeck(items: List<PartyItem>, itemIndex: Int, onVote: (
         }
         observedItemCount = items.size
     }
-    Box(Modifier.fillMaxWidth().padding(horizontal = 7.dp).height(565.dp), contentAlignment = Alignment.TopCenter) {
+    Box(
+        Modifier.fillMaxWidth().padding(horizontal = 7.dp).height(565.dp),
+        contentAlignment = Alignment.TopCenter
+    ) {
         queuedItems.asReversed().forEachIndexed { layer, queuedItem ->
             val depth = queuedItems.size - layer
             val rearOffset = depth - 1
@@ -316,29 +445,38 @@ private fun PartyItemCard(
             launch { promotionScale.animateTo(1f, tween(230)) }
         }
     }
-    val swipeModifier = if (voteAction == null) Modifier else Modifier.pointerInput(item.id, voteAction) {
-        detectDragGestures(
-            onDrag = { change, amount ->
-                change.consume()
-                scope.launch { dragX.snapTo(dragX.value + amount.x) }
-            },
-            onDragEnd = {
-                val amount = dragX.value
-                val threshold = size.width * 0.25f
-                if (abs(amount) >= threshold) {
-                    scope.launch {
-                        dragX.animateTo(if (amount > 0) size.width * 1.25f else -size.width * 1.25f, tween(220))
-                        voteAction(if (amount > 0) PartyVote.LIKE else PartyVote.SKIP)
+    val swipeModifier =
+        if (voteAction == null) Modifier else Modifier.pointerInput(item.id, voteAction) {
+            detectDragGestures(
+                onDrag = { change, amount ->
+                    change.consume()
+                    scope.launch { dragX.snapTo(dragX.value + amount.x) }
+                },
+                onDragEnd = {
+                    val amount = dragX.value
+                    val threshold = size.width * 0.25f
+                    if (abs(amount) >= threshold) {
+                        scope.launch {
+                            dragX.animateTo(
+                                if (amount > 0) size.width * 1.25f else -size.width * 1.25f,
+                                tween(220)
+                            )
+                            voteAction(if (amount > 0) PartyVote.LIKE else PartyVote.SKIP)
+                        }
+                    } else {
+                        scope.launch { dragX.animateTo(0f, tween(180)) }
                     }
-                } else {
-                    scope.launch { dragX.animateTo(0f, tween(180)) }
-                }
-            },
-        )
-    }
+                },
+            )
+        }
     Box(
         modifier.fillMaxWidth().height(565.dp)
-            .offset { IntOffset((dragX.value + promotionX.value).roundToInt(), promotionY.value.roundToInt()) }
+            .offset {
+                IntOffset(
+                    (dragX.value + promotionX.value).roundToInt(),
+                    promotionY.value.roundToInt()
+                )
+            }
             .graphicsLayer {
                 scaleX = promotionScale.value
                 scaleY = promotionScale.value
@@ -363,8 +501,15 @@ private fun PartyItemCard(
                 ),
             ),
             cover = {
-                if (item.imageKey.startsWith("content://") || item.imageKey.startsWith("file://") || item.imageKey.startsWith("http")) {
-                    AsyncImage(item.imageKey, contentDescription = item.title, modifier = Modifier.fillMaxSize())
+                if (item.imageKey.startsWith("content://") || item.imageKey.startsWith("file://") || item.imageKey.startsWith(
+                        "http"
+                    )
+                ) {
+                    AsyncImage(
+                        item.imageKey,
+                        contentDescription = item.title,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 } else SrArtwork(SrIllustration.EventThumbnail, Modifier.fillMaxSize(), item.title)
             },
             modifier = Modifier.fillMaxSize(),
@@ -387,18 +532,41 @@ private fun PartyItemCard(
 @Composable
 private fun WaitingPage(state: PartyUiState, vm: PartyViewModel) {
     val room = state.session?.room ?: return
-    val complete = room.finishedCount.takeIf { it > 0 } ?: room.participants.count { it.completedFeed }
+    val complete =
+        room.finishedCount.takeIf { it > 0 } ?: room.participants.count { it.completedFeed }
     Text("Ваш голос принят", style = SrType.Display, color = SrColors.Text)
-    Text("Если большинство выберет один вариант, покажем его всем. Иначе обновим подборку.", style = SrType.Body, color = SrColors.Muted)
-    Column(Modifier.clip(SrShapes.Panel).background(SrColors.Solid).border(1.dp, SrColors.Border, SrShapes.Panel).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Text(
+        "Если большинство выберет один вариант, покажем его всем. Иначе обновим подборку.",
+        style = SrType.Body,
+        color = SrColors.Muted
+    )
+    Column(
+        Modifier.clip(SrShapes.Panel).background(SrColors.Solid)
+            .border(1.dp, SrColors.Border, SrShapes.Panel).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Text("Ждём участников", style = SrType.Title, color = SrColors.Text)
-        Text("Голос отправлен · $complete из ${room.participants.size} завершили ленту", style = SrType.Body, color = SrColors.Muted)
+        Text(
+            "Голос отправлен · $complete из ${room.participants.size} завершили ленту",
+            style = SrType.Body,
+            color = SrColors.Muted
+        )
     }
-    SrButton("В начало ленты", vm::back, Modifier.fillMaxWidth(), style = ru.srastemsya.uikit.SrButtonStyle.Secondary)
+    SrButton(
+        "В начало ленты",
+        vm::back,
+        Modifier.fillMaxWidth(),
+        style = ru.srastemsya.uikit.SrButtonStyle.Secondary
+    )
 }
 
 @Composable
-private fun ResultPage(state: PartyUiState, vm: PartyViewModel, onOpenEvent: (String) -> Unit, onOpenPlace: () -> Unit) {
+private fun ResultPage(
+    state: PartyUiState,
+    vm: PartyViewModel,
+    onOpenEvent: (String) -> Unit,
+    onOpenPlace: () -> Unit
+) {
     if (state.isSingleDevice) {
         val selected = state.selectedItem
         if (selected == null) {
@@ -423,7 +591,11 @@ private fun ResultPage(state: PartyUiState, vm: PartyViewModel, onOpenEvent: (St
     val item = room.matchedItem
     if (item == null) {
         Text("Больше вариантов нет", style = SrType.Display, color = SrColors.Text)
-        Text("Участники завершили ленту, но общий выбор не совпал.", style = SrType.Body, color = SrColors.Muted)
+        Text(
+            "Участники завершили ленту, но общий выбор не совпал.",
+            style = SrType.Body,
+            color = SrColors.Muted
+        )
         SrButton("К фильтрам", vm::openFilters, Modifier.fillMaxWidth())
     } else {
         PartyItemCard(item)
@@ -445,20 +617,35 @@ private fun SelectedPartyItem(item: PartyItem) {
     ) {
         Box(
             Modifier.fillMaxWidth().height(300.dp).clip(SrShapes.Control)
-                .background(Brush.verticalGradient(listOf(Color(0xFF354878), Color(0xFFFFA36C), Color(0xFF182540)))),
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF354878),
+                            Color(0xFFFFA36C),
+                            Color(0xFF182540)
+                        )
+                    )
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Text(item.location, style = SrType.Title, color = Color.White)
         }
         Text(item.title, style = SrType.Heading, color = SrColors.Text)
-        Text("${item.category} · ${item.price} · ${item.location}", style = SrType.Label, color = SrColors.Text)
+        Text(
+            "${item.category} · ${item.price} · ${item.location}",
+            style = SrType.Label,
+            color = SrColors.Text
+        )
         Text(item.description, style = SrType.Body, color = SrColors.Muted)
     }
 }
 
 @Composable
 private fun Avatar(name: String, size: androidx.compose.ui.unit.Dp = 40.dp) {
-    Box(Modifier.size(size).clip(CircleShape).background(SrColors.Tint), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.size(size).clip(CircleShape).background(SrColors.Tint),
+        contentAlignment = Alignment.Center
+    ) {
         Text(name.take(2).uppercase(), style = SrType.Label, color = SrColors.Text)
     }
 }

@@ -57,13 +57,16 @@ class BackendMapCatalogRepository(private val api: BackendApi) : MapCatalogRepos
                     MapMarker(
                         id = ref.string("id").orEmpty(),
                         location = GeoPoint(
-                            latitude = location["latitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: return@mapNotNull null,
-                            longitude = location["longitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: return@mapNotNull null,
+                            latitude = location["latitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                                ?: return@mapNotNull null,
+                            longitude = location["longitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                                ?: return@mapNotNull null,
                         ),
                         type = type,
                         title = card.string("title").orEmpty(),
                         subtitle = date,
-                        detail = eventAttendanceSummary(confirmed, seats, remaining) ?: "Свободный вход",
+                        detail = eventAttendanceSummary(confirmed, seats, remaining)
+                            ?: "Свободный вход",
                         price = when {
                             price == null -> "Цена неизвестна"
                             price == 0 -> "Бесплатно"
@@ -110,13 +113,17 @@ class BackendMapCatalogRepository(private val api: BackendApi) : MapCatalogRepos
                 MapMarker(
                     id = ref.string("id").orEmpty(),
                     location = GeoPoint(
-                        latitude = location["latitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: return@mapNotNull null,
-                        longitude = location["longitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: return@mapNotNull null,
+                        latitude = location["latitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                            ?: return@mapNotNull null,
+                        longitude = location["longitude"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                            ?: return@mapNotNull null,
                     ),
                     type = type,
                     title = card.string("title").orEmpty(),
-                    subtitle = card.string("startsAt")?.let(::displayDate) ?: location.string("address").orEmpty(),
-                    detail = eventAttendanceSummary(confirmed, seats, remaining) ?: "Свободный вход",
+                    subtitle = card.string("startsAt")?.let(::displayDate)
+                        ?: location.string("address").orEmpty(),
+                    detail = eventAttendanceSummary(confirmed, seats, remaining)
+                        ?: "Свободный вход",
                     price = when {
                         price == null -> "Цена неизвестна"
                         price == 0 -> "Бесплатно"
@@ -154,7 +161,13 @@ class BackendMapCatalogRepository(private val api: BackendApi) : MapCatalogRepos
 private fun String.encodeQueryComponent(): String = buildString {
     encodeToByteArray().forEach { byte ->
         val value = byte.toInt() and 0xff
-        if ((value in 0x41..0x5a) || (value in 0x61..0x7a) || (value in 0x30..0x39) || value in listOf(0x2d, 0x2e, 0x5f, 0x7e)) {
+        if ((value in 0x41..0x5a) || (value in 0x61..0x7a) || (value in 0x30..0x39) || value in listOf(
+                0x2d,
+                0x2e,
+                0x5f,
+                0x7e
+            )
+        ) {
             append(value.toChar())
         } else {
             append('%')

@@ -9,6 +9,7 @@ class BackendFeedAccessRepository internal constructor(
     private val getProfile: suspend () -> kotlinx.serialization.json.JsonElement,
 ) : FeedAccessRepository {
     constructor(api: BackendApi) : this({ api.get("/v1/me") })
+
     override suspend fun isProfileComplete(): Boolean = try {
         getProfile().jsonObject["profileComplete"]?.toString() == "true"
     } catch (error: fefu.prime.srastem.backend.BackendException) {

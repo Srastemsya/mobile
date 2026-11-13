@@ -25,13 +25,19 @@ internal object FeedMappers {
         exception.status == 403 && exception.code == "PROFILE_INCOMPLETE" -> FeedError.ProfileIncomplete()
         exception.status == 410 && exception.code == "INVITE_EXPIRED" -> FeedError.InviteExpired()
         exception.status == 404 -> FeedError.RoomNotFound()
-        exception.status == 409 && exception.code in setOf("STALE_ROUND", "INVALID_STATE") -> FeedError.InvalidState()
+        exception.status == 409 && exception.code in setOf(
+            "STALE_ROUND",
+            "INVALID_STATE"
+        ) -> FeedError.InvalidState()
+
         exception.status == 409 && exception.code == "CURSOR_EXPIRED" -> FeedError.CursorExpired()
         else -> FeedError.Transport(exception.message)
     }
 
     fun errorOf(exception: Exception): FeedError =
-        if (exception is BackendException) errorOf(exception) else FeedError.Transport(exception.message ?: "Ошибка соединения с сервером")
+        if (exception is BackendException) errorOf(exception) else FeedError.Transport(
+            exception.message ?: "Ошибка соединения с сервером"
+        )
 
     fun page(json: JsonObject): FeedPage = FeedPage(
         items = json["items"]?.jsonArray.orEmpty().map { card(it.jsonObject) },
@@ -64,8 +70,11 @@ internal object FeedMappers {
         // details use the Event object directly.
         val card = json["card"]?.takeUnless { it == JsonNull }?.jsonObject ?: json
         val refObject = card["ref"]?.jsonObject
-        val kind = kind(refObject?.get("kind")?.jsonPrimitive?.content ?: card["kind"]?.jsonPrimitive?.content)
-        val id = refObject?.get("id")?.jsonPrimitive?.content ?: card["id"]?.jsonPrimitive?.content.orEmpty()
+        val kind = kind(
+            refObject?.get("kind")?.jsonPrimitive?.content ?: card["kind"]?.jsonPrimitive?.content
+        )
+        val id = refObject?.get("id")?.jsonPrimitive?.content
+            ?: card["id"]?.jsonPrimitive?.content.orEmpty()
         val priceMinor = card["price"]?.takeUnless { it == JsonNull }?.jsonObject
             ?.get("amountMinor")?.jsonPrimitive?.content?.toLongOrNull()
         return CatalogDetails(
@@ -82,7 +91,9 @@ internal object FeedMappers {
             admissionLabel = card["admission"]?.takeUnless { it == JsonNull }?.jsonObject?.let { admission ->
                 when (admission["type"]?.jsonPrimitive?.content) {
                     "OPEN" -> "Свободный вход"
-                    "REGISTRATION" -> admission["remainingCount"]?.jsonPrimitive?.content?.let { "Осталось мест: $it" } ?: "По записи"
+                    "REGISTRATION" -> admission["remainingCount"]?.jsonPrimitive?.content?.let { "Осталось мест: $it" }
+                        ?: "По записи"
+
                     else -> null
                 }
             },
@@ -124,7 +135,10 @@ internal object FeedMappers {
             resultMemberCount = json["result"]?.takeUnless { it == JsonNull }?.jsonObject?.get("memberCount")?.jsonPrimitive?.content?.toIntOrNull(),
             winner = json["result"]?.takeUnless { it == JsonNull }?.jsonObject
                 ?.get("winner")?.jsonObject?.let { winner ->
-                    FeedRef(kind(winner["kind"]?.jsonPrimitive?.content), winner["id"]?.jsonPrimitive?.content.orEmpty())
+                    FeedRef(
+                        kind(winner["kind"]?.jsonPrimitive?.content),
+                        winner["id"]?.jsonPrimitive?.content.orEmpty()
+                    )
                 },
         )
     }
@@ -149,7 +163,8 @@ internal object FeedMappers {
         else -> RoomPhase.CLOSED
     }
 
-    fun decision(value: String?): SwipeDecision = if (value == "LIKE") SwipeDecision.LIKE else SwipeDecision.SKIP
+    fun decision(value: String?): SwipeDecision =
+        if (value == "LIKE") SwipeDecision.LIKE else SwipeDecision.SKIP
 
     fun priceLabel(amountMinor: Long?): String = when {
         amountMinor == null -> "Цена неизвестна"

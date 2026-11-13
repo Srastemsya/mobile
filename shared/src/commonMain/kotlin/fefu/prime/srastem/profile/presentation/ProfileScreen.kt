@@ -66,7 +66,11 @@ import ru.srastemsya.uikit.SrIllustration
 import ru.srastemsya.uikit.SrType
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel, modifier: Modifier = Modifier, onOpenEvent: (String) -> Unit = {}) {
+fun ProfileScreen(
+    viewModel: ProfileViewModel,
+    modifier: Modifier = Modifier,
+    onOpenEvent: (String) -> Unit = {}
+) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.page) {
         if (state.page == ProfilePage.EVENTS) viewModel.refresh()
@@ -116,7 +120,8 @@ private fun HomePage(profile: ProfileDetails, vm: ProfileViewModel) {
         }
         Spacer(Modifier.height(18.dp))
         Column(
-            Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp), ambientColor = SrColors.Shadow)
+            Modifier.fillMaxWidth()
+                .shadow(8.dp, RoundedCornerShape(24.dp), ambientColor = SrColors.Shadow)
                 .clip(RoundedCornerShape(24.dp)).background(Color.White)
                 .border(1.dp, SrColors.Border, RoundedCornerShape(24.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -145,7 +150,8 @@ private fun DetailsPage(profile: ProfileDetails, vm: ProfileViewModel) {
                 Modifier.fillMaxWidth().height(108.dp)
                     .shadow(8.dp, RoundedCornerShape(24.dp), ambientColor = SrColors.Shadow)
                     .clip(RoundedCornerShape(24.dp)).background(Color.White)
-                    .border(1.dp, SrColors.Border, RoundedCornerShape(24.dp)).padding(horizontal = 16.dp),
+                    .border(1.dp, SrColors.Border, RoundedCornerShape(24.dp))
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -159,7 +165,8 @@ private fun DetailsPage(profile: ProfileDetails, vm: ProfileViewModel) {
                 }) { openPicker ->
                     Box(
                         Modifier.size(68.dp).clip(CircleShape)
-                            .background(SrColors.Tint).clickable(role = Role.Button, onClick = openPicker),
+                            .background(SrColors.Tint)
+                            .clickable(role = Role.Button, onClick = openPicker),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (profile.photoUri != null) ProfileAvatar(profile, Modifier.fillMaxSize())
@@ -178,7 +185,13 @@ private fun DetailsPage(profile: ProfileDetails, vm: ProfileViewModel) {
                 }
             }
             SrField(profile.city, { value -> vm.updateProfile { it.copy(city = value) } }, "Город")
-            SrField(profile.birthDate, {}, "Дата рождения", enabled = false, leading = SrIcon.Events)
+            SrField(
+                profile.birthDate,
+                {},
+                "Дата рождения",
+                enabled = false,
+                leading = SrIcon.Events
+            )
             SrField(
                 profile.about,
                 { value -> vm.updateProfile { it.copy(about = value) } },
@@ -219,7 +232,11 @@ private fun DetailsPage(profile: ProfileDetails, vm: ProfileViewModel) {
 }
 
 @Composable
-private fun SavedPage(events: List<ProfileEvent>, vm: ProfileViewModel, onOpenEvent: (String) -> Unit) {
+private fun SavedPage(
+    events: List<ProfileEvent>,
+    vm: ProfileViewModel,
+    onOpenEvent: (String) -> Unit
+) {
     Column(Modifier.fillMaxSize()) {
         SubHeader("Сохранённое", vm::back)
         Text(
@@ -231,9 +248,15 @@ private fun SavedPage(events: List<ProfileEvent>, vm: ProfileViewModel, onOpenEv
         if (events.isEmpty()) {
             EmptyProfileList("Здесь пока нет сохранённых событий")
         } else {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 events.forEach { event ->
-                    SavedEventCard(event, onOpen = { onOpenEvent(event.id) }, onRemove = { vm.removeSaved(event.id) })
+                    SavedEventCard(
+                        event,
+                        onOpen = { onOpenEvent(event.id) },
+                        onRemove = { vm.removeSaved(event.id) })
                 }
             }
         }
@@ -241,7 +264,11 @@ private fun SavedPage(events: List<ProfileEvent>, vm: ProfileViewModel, onOpenEv
 }
 
 @Composable
-private fun EventsPage(events: List<ProfileEvent>, vm: ProfileViewModel, onOpenEvent: (String) -> Unit) {
+private fun EventsPage(
+    events: List<ProfileEvent>,
+    vm: ProfileViewModel,
+    onOpenEvent: (String) -> Unit
+) {
     Column(Modifier.fillMaxSize()) {
         SubHeader("Мои события", onBack = vm::back)
         Column(
@@ -255,7 +282,12 @@ private fun EventsPage(events: List<ProfileEvent>, vm: ProfileViewModel, onOpenE
             Spacer(Modifier.height(8.dp))
             Text("Прошедшие", style = SrType.Title, color = SrColors.Text)
             val completed = events.filter { it.status == EventStatus.COMPLETED }
-            completed.forEach { event -> EventCard(event, onOpen = { onOpenEvent(event.id) }, onReview = { }) }
+            completed.forEach { event ->
+                EventCard(
+                    event,
+                    onOpen = { onOpenEvent(event.id) },
+                    onReview = { })
+            }
             if (completed.isEmpty()) EmptyProfileList("Завершённых событий пока нет")
         }
     }
@@ -271,7 +303,10 @@ private fun SubHeader(title: String, onBack: () -> Unit) {
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onBack),
+            contentAlignment = Alignment.Center
+        ) {
             SrGlyph(SrIcon.Back, description = "Назад", tint = SrColors.Text)
         }
         Text(title, Modifier.weight(1f), style = SrType.Heading, color = SrColors.Text)
@@ -280,17 +315,30 @@ private fun SubHeader(title: String, onBack: () -> Unit) {
 }
 
 @Composable
-private fun ProfileMenuRow(title: String, icon: SrIcon, isSupport: Boolean = false, onClick: () -> Unit) {
+private fun ProfileMenuRow(
+    title: String,
+    icon: SrIcon,
+    isSupport: Boolean = false,
+    onClick: () -> Unit
+) {
     Row(
         Modifier.fillMaxWidth().height(60.dp).clip(RoundedCornerShape(12.dp))
             .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(SrColors.Tint), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).background(SrColors.Tint),
+            contentAlignment = Alignment.Center
+        ) {
             if (isSupport) SupportGlyph() else SrGlyph(icon, tint = SrColors.Primary, size = 20.dp)
         }
-        Text(title, Modifier.weight(1f), style = SrType.Body.copy(fontWeight = FontWeight.SemiBold), color = SrColors.Text)
+        Text(
+            title,
+            Modifier.weight(1f),
+            style = SrType.Body.copy(fontWeight = FontWeight.SemiBold),
+            color = SrColors.Text
+        )
         SrGlyph(SrIcon.Next, tint = SrColors.Muted, size = 16.dp)
     }
 }
@@ -313,7 +361,10 @@ private fun ProfileAvatar(profile: ProfileDetails, modifier: Modifier = Modifier
             )
         }
     } else {
-        Box(modifier.clip(CircleShape).background(SrColors.Tint), contentAlignment = Alignment.Center) {
+        Box(
+            modifier.clip(CircleShape).background(SrColors.Tint),
+            contentAlignment = Alignment.Center
+        ) {
             Text("РК", style = SrType.Title, color = SrColors.Primary)
         }
     }
@@ -330,7 +381,10 @@ private fun AvatarCropDialog(
     onDismiss: () -> Unit,
     onApply: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Box(
             Modifier.fillMaxSize().background(Color(0x8F141425)).clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center,
@@ -341,15 +395,34 @@ private fun AvatarCropDialog(
                     .clip(RoundedCornerShape(28.dp)).background(Color.White)
                     .border(1.dp, SrColors.Border, RoundedCornerShape(28.dp)).padding(20.dp),
             ) {
-                Row(Modifier.fillMaxWidth().height(26.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Фото профиля", Modifier.weight(1f), style = SrType.Heading, color = SrColors.Text)
+                Row(
+                    Modifier.fillMaxWidth().height(26.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Фото профиля",
+                        Modifier.weight(1f),
+                        style = SrType.Heading,
+                        color = SrColors.Text
+                    )
                     Box(
                         Modifier.size(36.dp).clip(CircleShape).clickable(onClick = onDismiss),
                         contentAlignment = Alignment.Center,
-                    ) { SrGlyph(SrIcon.Close, description = "Закрыть", tint = SrColors.Text, size = 20.dp) }
+                    ) {
+                        SrGlyph(
+                            SrIcon.Close,
+                            description = "Закрыть",
+                            tint = SrColors.Text,
+                            size = 20.dp
+                        )
+                    }
                 }
                 Spacer(Modifier.height(7.dp))
-                Text("Переместите фото и настройте масштаб", style = SrType.Caption, color = SrColors.Muted)
+                Text(
+                    "Переместите фото и настройте масштаб",
+                    style = SrType.Caption,
+                    color = SrColors.Muted
+                )
                 Spacer(Modifier.height(14.dp))
                 Box(
                     Modifier.fillMaxWidth().height(318.dp)
@@ -360,8 +433,10 @@ private fun AvatarCropDialog(
                             detectDragGestures { change, drag ->
                                 change.consume()
                                 val apertureDiameterPx = size.width * (238f / 318f)
-                                dragOffsetX = (dragOffsetX + drag.x / apertureDiameterPx).coerceIn(-.5f, .5f)
-                                dragOffsetY = (dragOffsetY + drag.y / apertureDiameterPx).coerceIn(-.5f, .5f)
+                                dragOffsetX =
+                                    (dragOffsetX + drag.x / apertureDiameterPx).coerceIn(-.5f, .5f)
+                                dragOffsetY =
+                                    (dragOffsetY + drag.y / apertureDiameterPx).coerceIn(-.5f, .5f)
                                 onOffsetChanged(dragOffsetX, dragOffsetY)
                             }
                         },
@@ -382,20 +457,36 @@ private fun AvatarCropDialog(
                         val aperture = size.minDimension * (238f / 318f)
                         val mask = Path().apply {
                             fillType = PathFillType.EvenOdd
-                            addRect(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
-                            addOval(androidx.compose.ui.geometry.Rect(
-                                (size.width - aperture) / 2,
-                                (size.height - aperture) / 2,
-                                (size.width + aperture) / 2,
-                                (size.height + aperture) / 2,
-                            ))
+                            addRect(
+                                androidx.compose.ui.geometry.Rect(
+                                    0f,
+                                    0f,
+                                    size.width,
+                                    size.height
+                                )
+                            )
+                            addOval(
+                                androidx.compose.ui.geometry.Rect(
+                                    (size.width - aperture) / 2,
+                                    (size.height - aperture) / 2,
+                                    (size.width + aperture) / 2,
+                                    (size.height + aperture) / 2,
+                                )
+                            )
                         }
                         drawPath(mask, Color.Black.copy(alpha = .38f))
-                        drawCircle(Color.White, radius = aperture / 2, style = Stroke(width = 2.dp.toPx()))
+                        drawCircle(
+                            Color.White,
+                            radius = aperture / 2,
+                            style = Stroke(width = 2.dp.toPx())
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth().height(44.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         Modifier.size(44.dp).clip(CircleShape)
                             .clickable { onScaleChanged((scale - .1f).coerceAtLeast(1f)) },
@@ -440,9 +531,20 @@ private fun SavedEventCard(event: ProfileEvent, onOpen: () -> Unit, onRemove: ()
             subtitle = event.subtitle,
             state = SrEventListState.Saved,
             onOpen = onOpen,
-            cover = { SrArtwork(SrIllustration.EventThumbnail, Modifier.fillMaxSize(), event.title) },
+            cover = {
+                SrArtwork(
+                    SrIllustration.EventThumbnail,
+                    Modifier.fillMaxSize(),
+                    event.title
+                )
+            },
         )
-        SrButton("Убрать из сохранённого", onRemove, Modifier.fillMaxWidth(), style = ru.srastemsya.uikit.SrButtonStyle.Secondary)
+        SrButton(
+            "Убрать из сохранённого",
+            onRemove,
+            Modifier.fillMaxWidth(),
+            style = ru.srastemsya.uikit.SrButtonStyle.Secondary
+        )
     }
 }
 
@@ -460,7 +562,10 @@ private fun EventCard(event: ProfileEvent, onOpen: () -> Unit, onReview: (() -> 
 
 @Composable
 private fun EmptyProfileList(message: String) {
-    Column(Modifier.fillMaxWidth().padding(top = 90.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 90.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(message, style = SrType.Body, color = SrColors.Muted)
     }
 }
@@ -469,7 +574,12 @@ private fun EmptyProfileList(message: String) {
 private fun SettingsGlyph() {
     androidx.compose.foundation.Canvas(Modifier.size(22.dp)) {
         val center = androidx.compose.ui.geometry.Offset(size.width / 2, size.height / 2)
-        drawCircle(SrColors.Muted, radius = size.minDimension * .36f, center = center, style = androidx.compose.ui.graphics.drawscope.Stroke(size.minDimension * .11f))
+        drawCircle(
+            SrColors.Muted,
+            radius = size.minDimension * .36f,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(size.minDimension * .11f)
+        )
         drawCircle(SrColors.Muted, radius = size.minDimension * .11f, center = center)
         repeat(8) { index ->
             val angle = index * (kotlin.math.PI / 4.0)
@@ -477,7 +587,12 @@ private fun SettingsGlyph() {
             val outer = size.minDimension * .48f
             val x = kotlin.math.cos(angle).toFloat()
             val y = kotlin.math.sin(angle).toFloat()
-            drawLine(SrColors.Muted, androidx.compose.ui.geometry.Offset(center.x + x * inner, center.y + y * inner), androidx.compose.ui.geometry.Offset(center.x + x * outer, center.y + y * outer), size.minDimension * .11f)
+            drawLine(
+                SrColors.Muted,
+                androidx.compose.ui.geometry.Offset(center.x + x * inner, center.y + y * inner),
+                androidx.compose.ui.geometry.Offset(center.x + x * outer, center.y + y * outer),
+                size.minDimension * .11f
+            )
         }
     }
 }
@@ -487,19 +602,52 @@ private fun SupportGlyph() {
     androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
         val path = androidx.compose.ui.graphics.Path().apply {
             moveTo(size.width * .18f, size.height * .16f)
-            quadraticTo(size.width * .08f, size.height * .16f, size.width * .08f, size.height * .28f)
+            quadraticTo(
+                size.width * .08f,
+                size.height * .16f,
+                size.width * .08f,
+                size.height * .28f
+            )
             lineTo(size.width * .08f, size.height * .68f)
-            quadraticTo(size.width * .08f, size.height * .80f, size.width * .20f, size.height * .80f)
+            quadraticTo(
+                size.width * .08f,
+                size.height * .80f,
+                size.width * .20f,
+                size.height * .80f
+            )
             lineTo(size.width * .34f, size.height * .80f)
             lineTo(size.width * .23f, size.height * .96f)
             lineTo(size.width * .54f, size.height * .80f)
             lineTo(size.width * .80f, size.height * .80f)
-            quadraticTo(size.width * .92f, size.height * .80f, size.width * .92f, size.height * .68f)
+            quadraticTo(
+                size.width * .92f,
+                size.height * .80f,
+                size.width * .92f,
+                size.height * .68f
+            )
             lineTo(size.width * .92f, size.height * .28f)
-            quadraticTo(size.width * .92f, size.height * .16f, size.width * .80f, size.height * .16f)
+            quadraticTo(
+                size.width * .92f,
+                size.height * .16f,
+                size.width * .80f,
+                size.height * .16f
+            )
             close()
         }
-        drawPath(path, SrColors.Primary, style = androidx.compose.ui.graphics.drawscope.Stroke(size.minDimension * .09f))
-        repeat(3) { index -> drawCircle(SrColors.Primary, size.minDimension * .045f, androidx.compose.ui.geometry.Offset(size.width * (.36f + index * .14f), size.height * .48f)) }
+        drawPath(
+            path,
+            SrColors.Primary,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(size.minDimension * .09f)
+        )
+        repeat(3) { index ->
+            drawCircle(
+                SrColors.Primary,
+                size.minDimension * .045f,
+                androidx.compose.ui.geometry.Offset(
+                    size.width * (.36f + index * .14f),
+                    size.height * .48f
+                )
+            )
+        }
     }
 }

@@ -49,27 +49,46 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
 
     override suspend fun createRoom(name: String, participantName: String): PartySession {
         val createScope = "create-room:${name.trim().hashCode()}"
-        val created = api.post("/v1/rooms", jsonObjectOf("name" to name.trim().ifBlank { null }), api.idempotencyKey(createScope)).value?.jsonObject
+        val created = api.post(
+            "/v1/rooms",
+            jsonObjectOf("name" to name.trim().ifBlank { null }),
+            api.idempotencyKey(createScope)
+        ).value?.jsonObject
             ?: error("Сервер не вернул комнату")
         val id = created.string("id") ?: error("Сервер не вернул ID комнаты")
         val inviteScope = "invite-room:$id"
-        val invite = api.postEmpty("/v1/rooms/$id/invites", api.idempotencyKey(inviteScope)).value?.jsonObject
+        val invite = api.postEmpty(
+            "/v1/rooms/$id/invites",
+            api.idempotencyKey(inviteScope)
+        ).value?.jsonObject
         api.clearIdempotencyKey(inviteScope)
         val inviteUrl = invite?.string("url") ?: error("Сервер не вернул приглашение")
         api.clearIdempotencyKey(createScope)
-        return PartySession(api.userId(), partyRoom(FeedMappers.room(created, api.userId())), inviteUrl)
+        return PartySession(
+            api.userId(),
+            partyRoom(FeedMappers.room(created, api.userId())),
+            inviteUrl
+        )
     }
 
     override suspend fun joinRoom(roomId: String, participantName: String): PartySession {
         val token = extractInviteToken(roomId)
         val joinScope = "join-room:${token.hashCode()}"
-        val joined = api.post("/v1/room-invites/join", jsonObjectOf("token" to token), api.idempotencyKey(joinScope)).value?.jsonObject
+        val joined = api.post(
+            "/v1/room-invites/join",
+            jsonObjectOf("token" to token),
+            api.idempotencyKey(joinScope)
+        ).value?.jsonObject
             ?: error("Сервер не вернул комнату")
         api.clearIdempotencyKey(joinScope)
         return PartySession(api.userId(), partyRoom(FeedMappers.room(joined, api.userId())), roomId)
     }
 
-    override suspend fun updateFilters(roomId: String, participantId: String, filters: PartyFilters) {
+    override suspend fun updateFilters(
+        roomId: String,
+        participantId: String,
+        filters: PartyFilters
+    ) {
         pendingFilters[roomId] = filters
     }
 
@@ -78,18 +97,32 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
         val members = room.members.size.coerceAtLeast(1)
         val filters = (pendingFilters[roomId] ?: PartyFilters()).toFeedFilters(members)
         val scope = "start-room:$roomId"
-        api.post("/v1/rooms/$roomId/start", FeedContract.startBody(filters), api.idempotencyKey(scope))
+        api.post(
+            "/v1/rooms/$roomId/start",
+            FeedContract.startBody(filters),
+            api.idempotencyKey(scope)
+        )
         api.clearIdempotencyKey(scope)
         pendingFilters.remove(roomId)
     }
 
-    override suspend fun loadMoreItems(roomId: String, participantId: String, nextItemIndex: Int): PartyRoom =
+    override suspend fun loadMoreItems(
+        roomId: String,
+        participantId: String,
+        nextItemIndex: Int
+    ): PartyRoom =
         partyRoom(FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()))
 
-    override suspend fun submitVote(roomId: String, participantId: String, itemId: String, vote: fefu.prime.srastem.feed.domain.SwipeDecision) {
+    override suspend fun submitVote(
+        roomId: String,
+        participantId: String,
+        itemId: String,
+        vote: fefu.prime.srastem.feed.domain.SwipeDecision
+    ) {
         val room = FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId())
         val roundId = room.roundId ?: error("Раунд завершён")
-        val candidate = room.candidates.firstOrNull { it.ref.id == itemId } ?: error("Карточка больше недоступна")
+        val candidate = room.candidates.firstOrNull { it.ref.id == itemId }
+            ?: error("Карточка больше недоступна")
         api.put(
             "/v1/rooms/$roomId/rounds/$roundId/votes/${candidate.ref.kind.name}/$itemId",
             jsonObjectOf("choice" to if (vote == fefu.prime.srastem.feed.domain.SwipeDecision.LIKE) "LIKE" else "PASS"),
@@ -97,19 +130,23 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
     }
 
     override suspend fun completeFeed(roomId: String, participantId: String) {
-        val roundId = FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()).roundId
-            ?: error("Раунд уже завершён")
+        val roundId =
+            FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()).roundId
+                ?: error("Раунд уже завершён")
         api.putEmpty("/v1/rooms/$roomId/rounds/$roundId/completion")
     }
 
     override fun observeRoom(roomId: String): Flow<PartyRoom> = flow {
-        var room = partyRoom(FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()))
+        var room =
+            partyRoom(FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId()))
         emit(room)
         while (room.phase != PartyPhase.MATCH && room.phase != PartyPhase.FINISHED) {
             try {
-                val result = api.getResult("/v1/rooms/$roomId?afterVersion=${room.version}&waitSeconds=25")
+                val result =
+                    api.getResult("/v1/rooms/$roomId?afterVersion=${room.version}&waitSeconds=25")
                 if (result.status == 204) continue
-                val snapshot = result.value?.jsonObject?.let { FeedMappers.room(it, api.userId()) } ?: continue
+                val snapshot =
+                    result.value?.jsonObject?.let { FeedMappers.room(it, api.userId()) } ?: continue
                 if (snapshot.version >= room.version) {
                     room = partyRoom(snapshot)
                     emit(room)
@@ -137,7 +174,8 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
                     completedFeed = member.userId == api.userId() && snapshot.myFinished,
                 )
             },
-            filters = snapshot.filters?.toPartyFilters() ?: pendingFilters[snapshot.id] ?: PartyFilters(),
+            filters = snapshot.filters?.toPartyFilters() ?: pendingFilters[snapshot.id]
+            ?: PartyFilters(),
             phase = when (snapshot.phase) {
                 RoomPhase.LOBBY -> PartyPhase.LOBBY
                 RoomPhase.VOTING -> if (snapshot.myFinished) PartyPhase.WAITING else PartyPhase.FEED
@@ -172,7 +210,8 @@ class BackendPartyRepository(private val api: BackendApi) : PartyRepository {
             "outdoors" -> PartyCategory.ACTIVITIES
             else -> PartyCategory.ALL
         },
-        budgetPerPerson = ((budgetTotalMinor ?: 200_000L) / 100 / (partySize ?: 1).coerceAtLeast(1)).toInt(),
+        budgetPerPerson = ((budgetTotalMinor ?: 200_000L) / 100 / (partySize
+            ?: 1).coerceAtLeast(1)).toInt(),
         whenLabel = localDate ?: "Сегодня",
     )
 

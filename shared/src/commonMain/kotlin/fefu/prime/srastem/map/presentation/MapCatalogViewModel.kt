@@ -27,7 +27,10 @@ class MapCatalogViewModel(
     private val settings: Settings = Settings(),
 ) : ViewModel() {
     private val _state = MutableStateFlow(
-        MapCatalogUiState(recentSearches = settings.getString(KEY_RECENT_SEARCHES, "").split('|').filter(String::isNotBlank).take(5)),
+        MapCatalogUiState(
+            recentSearches = settings.getString(KEY_RECENT_SEARCHES, "").split('|')
+                .filter(String::isNotBlank).take(5)
+        ),
     )
     val state: StateFlow<MapCatalogUiState> = _state.asStateFlow()
     private var searchJob: Job? = null
@@ -36,7 +39,8 @@ class MapCatalogViewModel(
         viewModelScope.launch {
             observeMapMarkers().catch { error ->
                 if (error is CancellationException) throw error
-                _state.value = _state.value.copy(error = error.message ?: "Не удалось обновить события карты")
+                _state.value =
+                    _state.value.copy(error = error.message ?: "Не удалось обновить события карты")
             }.collect { markers -> _state.value = _state.value.copy(eventMarkers = markers) }
         }
     }
@@ -48,7 +52,8 @@ class MapCatalogViewModel(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _state.value = _state.value.copy(error = error.message ?: "Не удалось обновить карту")
+                _state.value =
+                    _state.value.copy(error = error.message ?: "Не удалось обновить карту")
             }
         }
     }
@@ -56,28 +61,43 @@ class MapCatalogViewModel(
     fun search(query: String) {
         searchJob?.cancel()
         if (query.isBlank()) {
-            _state.value = _state.value.copy(searchResults = emptyList(), searchSuggestions = emptyList())
+            _state.value =
+                _state.value.copy(searchResults = emptyList(), searchSuggestions = emptyList())
             return
         }
-        _state.value = _state.value.copy(searchResults = emptyList(), searchSuggestions = emptyList(), error = null)
+        _state.value = _state.value.copy(
+            searchResults = emptyList(),
+            searchSuggestions = emptyList(),
+            error = null
+        )
         searchJob = viewModelScope.launch {
             delay(250)
             try {
                 val normalized = query.trim()
                 val results = observeMapMarkers.search(normalized)
                 val suggestions = observeMapMarkers.suggestions(normalized)
-                _state.value = _state.value.copy(searchResults = results, searchSuggestions = suggestions, error = null)
+                _state.value = _state.value.copy(
+                    searchResults = results,
+                    searchSuggestions = suggestions,
+                    error = null
+                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                _state.value = _state.value.copy(error = error.message ?: "Не удалось выполнить поиск")
+                _state.value =
+                    _state.value.copy(error = error.message ?: "Не удалось выполнить поиск")
             }
         }
     }
 
     fun recordSearch(query: String) {
         val normalized = query.trim().takeIf(String::isNotBlank) ?: return
-        val recent = (listOf(normalized) + _state.value.recentSearches.filterNot { it.equals(normalized, ignoreCase = true) })
+        val recent = (listOf(normalized) + _state.value.recentSearches.filterNot {
+            it.equals(
+                normalized,
+                ignoreCase = true
+            )
+        })
             .take(5)
         _state.value = _state.value.copy(recentSearches = recent)
         settings.putString(KEY_RECENT_SEARCHES, recent.joinToString("|"))

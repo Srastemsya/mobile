@@ -20,11 +20,12 @@ data class FeedSwipeState(
     companion object {
         const val LOCAL_POOL_SIZE = 10
 
-        fun fromCandidates(candidates: List<FeedCard>, nextCursor: String? = null): FeedSwipeState = FeedSwipeState(
-            cards = candidates.take(LOCAL_POOL_SIZE),
-            queuedCards = candidates.drop(LOCAL_POOL_SIZE),
-            nextCursor = nextCursor,
-        )
+        fun fromCandidates(candidates: List<FeedCard>, nextCursor: String? = null): FeedSwipeState =
+            FeedSwipeState(
+                cards = candidates.take(LOCAL_POOL_SIZE),
+                queuedCards = candidates.drop(LOCAL_POOL_SIZE),
+                nextCursor = nextCursor,
+            )
     }
 }
 
@@ -34,7 +35,11 @@ fun FeedSwipeState.decide(decision: SwipeDecision): FeedSwipeState {
     if (current == null || loadingNextPool) return this
     val updatedDecisions = decisions + (index to decision)
     val nextIndex = index + 1
-    if (nextIndex < cards.size) return copy(decisions = updatedDecisions, index = nextIndex, lastDecision = decision)
+    if (nextIndex < cards.size) return copy(
+        decisions = updatedDecisions,
+        index = nextIndex,
+        lastDecision = decision
+    )
     if (queuedCards.isNotEmpty()) {
         return copy(
             cards = queuedCards.take(FeedSwipeState.LOCAL_POOL_SIZE),
@@ -49,5 +54,9 @@ fun FeedSwipeState.decide(decision: SwipeDecision): FeedSwipeState {
 
 fun FeedSwipeState.undo(): FeedSwipeState = if (!canUndo) this else {
     val previous = index - 1
-    copy(index = previous, decisions = decisions - previous, lastDecision = decisions[previous] ?: SwipeDecision.SKIP)
+    copy(
+        index = previous,
+        decisions = decisions - previous,
+        lastDecision = decisions[previous] ?: SwipeDecision.SKIP
+    )
 }
