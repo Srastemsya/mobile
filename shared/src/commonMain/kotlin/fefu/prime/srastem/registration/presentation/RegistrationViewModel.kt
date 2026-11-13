@@ -224,6 +224,20 @@ class RegistrationViewModel(
         }
     }
 
+    /**
+     * AC-06: сценарии ленты доступны только с завершённым профилем. Открывает шаг профиля
+     * регистрации поверх текущего экрана при `403 PROFILE_INCOMPLETE` или незавершённом профиле.
+     */
+    fun openProfileCompletion() {
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            isVisible = true,
+            step = RegistrationStep.PROFILE,
+            error = null,
+            errorField = null,
+        )
+    }
+
     private fun MutableStateFlow<RegistrationUiState>.update(transform: (RegistrationUiState) -> RegistrationUiState) {
         value = transform(value)
     }
