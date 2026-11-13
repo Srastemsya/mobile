@@ -54,7 +54,7 @@ class RoomLobbyViewModelTest {
 
     @Test fun ownerCanInviteAndCopiedStateIsVisible() = runTest {
         val rooms = Rooms(); val vm = vm(rooms)
-        vm.setName("Friday"); vm.create(); vm.issueInvite()
+        vm.setName("Friday"); vm.create()
         assertEquals(1, rooms.inviteCount)
         assertNotNull(vm.state.value.invite)
         vm.copied(); assertTrue(vm.state.value.copied)

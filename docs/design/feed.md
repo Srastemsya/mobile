@@ -6,7 +6,7 @@
 
 | Шаг | Одно устройство | Несколько устройств |
 |---|---|---|
-| Вход | [Выбор устройства](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4077) → фильтры | [Создание комнаты](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4137) → [приглашение](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4192) → фильтры |
+| Вход | [Выбор устройства](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4077) → фильтры | [Создание комнаты](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10707) → [приглашение](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10728) / [скопировано](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10751) → фильтры |
 | Фильтры | [Места](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4332) | [Места](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4478) |
 | Первая подборка | [Место](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4624), [событие](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4753) | [Место](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4882), [событие](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-5021) |
 | Ожидание | Первый лайк сразу открывает результат | После последней карточки участник переходит в [ожидание голосов](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-5270) |
@@ -47,9 +47,9 @@
 
 Сценарий для друзей, выбирающих с разных устройств: организатор задаёт имя комнаты, получает ссылку и ждёт участников; приглашённый открывает ссылку и видит тот же состав. Это снижает риск начать выбор без друга и помогает заметить, что приглашение истекло. Вход — карточка «На нескольких устройствах» в Ленте или deeplink.
 
-1. [Создание](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10707): поле названия и кнопка «Создать». Пустое название блокирует создание.
-2. [Приглашение](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10728): название, число и имена участников, ссылка. Организатор выпускает ссылку, может выпустить новую и переходит к фильтрам при двух участниках. Состав обновляется автоматически. Приглашённый видит ожидание без управления стартом.
-3. [Скопировано](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10751): после копирования кнопка и заголовок подтверждают действие.
+1. [Создание](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10707): поле названия и кнопка «Создать комнату». Пустое название блокирует создание.
+2. [Приглашение](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10728): название, группа аватаров с инициалами и число участников, встроенная карточка приглашения без отображения сырого URL. Организатор получает ссылку после создания комнаты и переходит к фильтрам при двух участниках. Состав обновляется автоматически. Приглашённый видит ожидание без управления стартом.
+3. [Скопировано](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10751): после копирования карточка заменяется компактным подтверждением без кнопки.
 4. Истёкшая ссылка показывает просьбу получить новую; экран остаётся доступным. Повторный вход участника возвращает его в текущую комнату. «Назад» закрывает лобби и останавливает обновления.
 5. Организатор задаёт тип, дату события и общий бюджет на шаге фильтров и запускает комнату. Число участников берётся из состава комнаты и в фильтрах не вводится. После ответа показывается число карточек пула; свайпы и голосование реализуются отдельным пакетом.
 

@@ -37,23 +37,33 @@ fun RoomLobbyScreen(viewModel: RoomLobbyViewModel, onBack: () -> Unit, modifier:
             if (!state.joined) {
                 Text("Друзья смогут присоединиться по ссылке.", style = SrType.Body, color = SrColors.Muted)
                 SrField(state.name, viewModel::setName, "Название комнаты", placeholder = "Вечер пятницы", errorMessage = state.error)
-                SrButton("Создать", viewModel::create, Modifier.fillMaxWidth(), enabled = !state.busy && state.name.isNotBlank(), loading = state.busy)
+                SrButton("Создать комнату", viewModel::create, Modifier.fillMaxWidth(), enabled = !state.busy && state.name.isNotBlank(), loading = state.busy)
             }
         } else {
             Text(room.name.orEmpty(), style = SrType.Display, color = SrColors.Text)
-            Text("Пригласите друзей, прежде чем начать выбор", style = SrType.Body, color = SrColors.Muted)
-            Text("${room.members.size} участников подключились", style = SrType.Title, color = SrColors.Text)
-            room.members.forEach { member -> Text(member.displayName, style = SrType.Body, color = SrColors.Text) }
+            Text("Пригласите друзей, прежде чем начать выбор.", style = SrType.Body, color = SrColors.Muted)
+            SrAvatarGroup(room.members.map { member ->
+                member.displayName.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+                    .take(2).joinToString("") { it.take(1).uppercase() }.ifBlank { "?" }
+            })
+            Text("${room.members.size} участников подключились", style = SrType.Label, color = SrColors.Muted)
             if (state.isOwner && room.phase == fefu.prime.srastem.feed.domain.RoomPhase.LOBBY) {
                 val invite = state.invite
-                if (invite == null) SrButton("Пригласить друзей", viewModel::issueInvite, Modifier.fillMaxWidth(), loading = state.busy)
-                else {
-                    Text(if (state.copied) "Ссылка скопирована" else "Пригласить в комнату", style = SrType.Title, color = SrColors.Text)
-                    Text(invite.url, style = SrType.Body, color = SrColors.Primary)
-                    SrButton(if (state.copied) "Скопировано" else "Скопировать ссылку", { clipboard.setText(AnnotatedString(invite.url)); viewModel.copied() }, Modifier.fillMaxWidth())
-                    SrButton("Новая ссылка", viewModel::issueInvite, Modifier.fillMaxWidth(), style = SrButtonStyle.Secondary)
-                }
-                SrButton("Начать выбор", viewModel::openFilters, Modifier.fillMaxWidth(), enabled = state.canStart)
+                SrRoomInvite(
+                    title = if (state.copied) "Ссылка скопирована" else "Пригласить в комнату",
+                    message = "Поделитесь ссылкой с друзьями.",
+                    state = when {
+                        state.copied -> SrInviteState.Copied
+                        invite == null -> SrInviteState.Expired
+                        else -> SrInviteState.Link
+                    },
+                    onAction = {
+                        if (invite == null) viewModel.issueInvite()
+                        else { clipboard.setText(AnnotatedString(invite.url)); viewModel.copied() }
+                    },
+                    modifier = Modifier.widthIn(max = 296.dp),
+                )
+                SrButton("К фильтрам", viewModel::openFilters, Modifier.fillMaxWidth(), enabled = state.canStart)
             } else if (room.phase == fefu.prime.srastem.feed.domain.RoomPhase.LOBBY) {
                 Text("Ждём, пока организатор начнёт выбор", style = SrType.Body, color = SrColors.Muted)
             } else Text("Выбор начался · ${room.candidates.size} вариантов в пуле", style = SrType.Body, color = SrColors.Muted)

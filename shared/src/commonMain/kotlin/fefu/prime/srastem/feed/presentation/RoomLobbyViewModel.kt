@@ -51,7 +51,11 @@ class RoomLobbyViewModel(
         if (state.value.busy) return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
-            createRoom(name).onSuccess { attach(it, joined = false) }
+            createRoom(name).onSuccess { room ->
+                attach(room, joined = false)
+                createInvite(room.id).onSuccess { invite -> _state.update { it.copy(invite = invite) } }
+                    .onFailure { error -> _state.update { it.copy(error = error.message ?: "Не удалось создать ссылку") } }
+            }
                 .onFailure { error -> _state.update { it.copy(error = error.message ?: "Не удалось создать комнату") } }
             _state.update { it.copy(busy = false) }
         }
