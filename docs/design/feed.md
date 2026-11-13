@@ -1,6 +1,6 @@
 # Лента
 
-Помогает компании выбрать место или мероприятие. Вход — вкладка «Лента» на Главной и Карте. [Секция в Figma](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4076)
+Помогает компании выбрать место или мероприятие. Вход — вкладка «Лента» на Главной и Карте. [Актуальная секция в Figma](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10678) · [прежняя секция](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=182-4076). Клиентская очередь спецификаций — [feed-v1](../specs/feed-v1/README.md).
 
 ## Экраны и состояния
 
