@@ -1,21 +1,21 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-bin="${OPENCODE_BIN:-$PWD/.opencode/bin/opencode}"
+bin="${OPENCODE_BIN:-$PWD/.opencode/bin/v2/opencode}"
 if [ ! -x "$bin" ]; then
-  bin="$(command -v opencode)" || { echo 'OpenCode CLI отсутствует. См. README.opencode.md.' >&2; exit 1; }
+  echo "OpenCode 2.2.7 не найден: $bin. См. README.opencode.md." >&2
+  exit 1
 fi
-state="$PWD/.opencode/state"
+state="${OPENCODE_STATE_ROOT:-$PWD/.opencode/state/v2}"
 export XDG_CONFIG_HOME="$state/config"
 export XDG_DATA_HOME="$state/data"
 export XDG_CACHE_HOME="$state/cache"
 export XDG_STATE_HOME="$state/state"
 case "${1:-}" in
-  --version|--help|mcp) exec "$bin" "$@" ;;
+  --version|--help|mcp|service|api) exec "$bin" "$@" ;;
 esac
-: "${COMPAT_API_BASE:?Укажите базовый URL API}"
 : "${COMPAT_API_KEY:?Загрузите ключ API в окружение}"
-: "${COMPAT_API_MODEL:?Укажите точный ID модели}"
+export COMPAT_API_BASE="${COMPAT_API_BASE:-https://gptunnel.ru/v1}"
 python_bin="${PYTHON_BIN:-}"
 if [ -z "$python_bin" ]; then
   if [ -x /usr/bin/python3 ]; then
@@ -24,20 +24,7 @@ if [ -z "$python_bin" ]; then
     python_bin="$(command -v python3)" || { echo 'Python 3 не найден.' >&2; exit 1; }
   fi
 fi
-OPENCODE_CONFIG_CONTENT="$("$python_bin" - <<'PY'
-import json
-import os
-
-model = os.environ["COMPAT_API_MODEL"]
-print(json.dumps({
-    "model": f"compatible/{model}",
-    "provider": {
-        "compatible": {
-            "models": {model: {"name": model}},
-        }
-    },
-}))
-PY
-)"
+OPENCODE_CONFIG_CONTENT="$("$python_bin" .opencode/provider-config.py)"
 export OPENCODE_CONFIG_CONTENT
-exec "$bin" "$@"
+if [ "${1:-}" = --standalone ]; then shift; fi
+exec "$bin" --standalone "$@"
