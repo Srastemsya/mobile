@@ -13,8 +13,7 @@ actual fun currentDateParts(): List<Int> = Calendar.getInstance().let {
     listOf(it.get(Calendar.YEAR), it.get(Calendar.MONTH) + 1, it.get(Calendar.DAY_OF_MONTH))
 }
 
-actual fun backendBaseUrl(): String =
-    if (isAndroidEmulator()) "http://10.0.2.2:8080" else "http://127.0.0.1:8080"
+actual fun backendBaseUrl(): String = "https://srastemsya.nixbi.ru"
 
 private fun isAndroidEmulator(): Boolean =
     Build.FINGERPRINT.startsWith("generic") ||

@@ -21,4 +21,4 @@ actual fun currentDateParts(): List<Int> {
     return listOf(components.year.toInt(), components.month.toInt(), components.day.toInt())
 }
 
-actual fun backendBaseUrl(): String = "http://127.0.0.1:8080"
+actual fun backendBaseUrl(): String ="https://srastemsya.nixbi.ru"
