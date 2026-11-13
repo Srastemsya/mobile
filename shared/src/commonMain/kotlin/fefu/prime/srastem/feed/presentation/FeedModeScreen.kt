@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
@@ -34,6 +35,11 @@ import ru.srastemsya.uikit.SrIcon
 import ru.srastemsya.uikit.SrShapes
 import ru.srastemsya.uikit.SrTopBar
 import ru.srastemsya.uikit.SrType
+import ru.srastemsya.uikit.SrChip
+import ru.srastemsya.uikit.SrField
+import ru.srastemsya.uikit.SrFieldKind
+import ru.srastemsya.uikit.SrDate
+import ru.srastemsya.uikit.SrDateField
 
 /**
  * Экран «Выбираем вместе» (FE-F00, фрейм Figma 280-10679).
@@ -58,6 +64,50 @@ fun FeedModeScreen(
             onBack = { onEvent(FeedModeEvent.DismissNotice) },
             modifier = modifier,
         )
+        return
+    }
+    if (state.filterOpen) {
+        Column(modifier.fillMaxSize().background(FeedDesign.ScreenGradient).windowInsetsPadding(WindowInsets.statusBars).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            SrTopBar(title = "Фильтры", onBack = { onEvent(FeedModeEvent.DismissNotice) })
+            Text("Что ищем?", style = SrType.Display, color = SrColors.Text)
+            Text("Вы выбираете вместе на одном устройстве", style = SrType.Body, color = SrColors.Muted)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SrChip("Места", selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE, onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.PLACE)) })
+                SrChip("События", selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT, onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.EVENT)) })
+            }
+            if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) SrDateField(
+                value = state.localDate.asSrDate(),
+                onSelect = { date -> onEvent(FeedModeEvent.DateChanged("${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}")) },
+                label = "Дата события",
+                errorMessage = if (state.fieldError?.contains("дату") == true) state.fieldError else null,
+            )
+            Text("Категории", style = SrType.Title, color = SrColors.Text)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SrChip("Все", selected = state.categoryId == null, onClick = { onEvent(FeedModeEvent.CategoryChanged(null)) })
+                state.categories.filter { state.kind.name in it.kinds }.forEach { category ->
+                    SrChip(category.label, selected = state.categoryId == category.id, onClick = { onEvent(FeedModeEvent.CategoryChanged(category.id)) })
+                }
+            }
+            SrField(state.budgetRubles, { onEvent(FeedModeEvent.BudgetChanged(it)) }, "Общий бюджет, ₽", kind = SrFieldKind.Number, placeholder = "Необязательно", errorMessage = state.fieldError)
+            SrField(state.partySizeText, { onEvent(FeedModeEvent.PartySizeChanged(it)) }, "Человек", kind = SrFieldKind.Number, placeholder = "2", errorMessage = if (state.fieldError?.contains("человек") == true) state.fieldError else null)
+            state.feedError?.let { Text(it, style = SrType.Body, color = SrColors.Error) }
+            if (state.busy) CircularProgressIndicator(color = SrColors.Primary)
+            SrButton("Показать подборку", { onEvent(FeedModeEvent.SubmitFilters) }, enabled = !state.busy, loading = state.busy)
+            Spacer(Modifier.height(24.dp))
+        }
+        return
+    }
+    if (state.cards.isNotEmpty() || state.feedError != null) {
+        Column(modifier.fillMaxSize().background(FeedDesign.ScreenGradient).windowInsetsPadding(WindowInsets.statusBars).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SrTopBar(title = "Подборка", onBack = { onEvent(FeedModeEvent.ChangeFilters) })
+            Text("Подходящие варианты", style = SrType.Display, color = SrColors.Text)
+            state.cards.forEach { card -> Text(card.title, style = SrType.Title, color = SrColors.Text) }
+            state.feedError?.let { Text(it, style = SrType.Body, color = SrColors.Muted) }
+            SrButton("Изменить фильтры", { onEvent(FeedModeEvent.ChangeFilters) }, style = SrButtonStyle.Secondary)
+        }
         return
     }
     Column(
@@ -203,4 +253,13 @@ internal object FeedDesign {
             1f to SrColors.GlassIris,
         ),
     )
+}
+
+private fun String.asSrDate(): SrDate? {
+    val parts = split('-')
+    if (parts.size != 3) return null
+    val year = parts[0].toIntOrNull() ?: return null
+    val month = parts[1].toIntOrNull() ?: return null
+    val day = parts[2].toIntOrNull() ?: return null
+    return runCatching { SrDate(year, month, day) }.getOrNull()
 }

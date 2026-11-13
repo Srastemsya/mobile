@@ -15,12 +15,14 @@ import fefu.prime.srastem.party.data.BackendPartyRepository
 import fefu.prime.srastem.party.presentation.PartyViewModel
 import fefu.prime.srastem.party.domain.PartyRepository
 import fefu.prime.srastem.feed.data.BackendFeedRepository
+import fefu.prime.srastem.feed.data.BackendFeedCategoryRepository
 import fefu.prime.srastem.feed.data.BackendRoomRepository
 import fefu.prime.srastem.feed.domain.CompleteRoundUseCase
 import fefu.prime.srastem.feed.domain.CreateInviteUseCase
 import fefu.prime.srastem.feed.domain.CreateRoomUseCase
 import fefu.prime.srastem.feed.domain.FeedRepository
 import fefu.prime.srastem.feed.domain.GetFeedCandidatesUseCase
+import fefu.prime.srastem.feed.domain.GetFeedCategoriesUseCase
 import fefu.prime.srastem.feed.domain.JoinRoomUseCase
 import fefu.prime.srastem.feed.domain.ObserveRoomUseCase
 import fefu.prime.srastem.feed.domain.RoomRepository
@@ -90,6 +92,8 @@ class AppContainer(
         profileGate = fefu.prime.srastem.feed.domain.CheckFeedAccessUseCase(
             fefu.prime.srastem.feed.data.BackendFeedAccessRepository(api),
         ),
+        getCategories = GetFeedCategoriesUseCase(BackendFeedCategoryRepository(api)),
+        getCandidates = getFeedCandidates,
     )
 
     fun createProfileViewModel() = ProfileViewModel(profileRepository)

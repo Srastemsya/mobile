@@ -21,4 +21,11 @@ sealed interface FeedModeEvent {
     data object RetryProfileCheck : FeedModeEvent
 
     data object CompleteProfileSelected : FeedModeEvent
+    data class KindChanged(val kind: fefu.prime.srastem.feed.domain.FeedKind) : FeedModeEvent
+    data class CategoryChanged(val categoryId: String?) : FeedModeEvent
+    data class DateChanged(val value: String) : FeedModeEvent
+    data class BudgetChanged(val value: String) : FeedModeEvent
+    data class PartySizeChanged(val value: String) : FeedModeEvent
+    data object SubmitFilters : FeedModeEvent
+    data object ChangeFilters : FeedModeEvent
 }

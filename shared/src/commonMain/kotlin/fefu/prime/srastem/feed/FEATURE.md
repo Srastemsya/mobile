@@ -1,16 +1,18 @@
-# Лента · вход и выбор режима (FE-F00)
+# Лента · вход, фильтры и подборка (FE-F00/FE-F01)
 
 ## Краткое описание
 
-Фича `feed` — общая доменная модель и точка входа сценариев подборки мест и событий для компании. Пакет FE-F00 даёт вкладку «Лента» с экраном «Выбираем вместе» (две карточки режимов), вход «Свайпать события» с Главной с предвыбранным `kind=EVENT` и доступ только с завершённым профилем. Спецификация: [docs/specs/feed-v1/implementation.md](../../../../../../../../docs/specs/feed-v1/implementation.md#fe-f00--вход-и-выбор-режима), дизайн: [docs/design/feed.md](../../../../../../../../docs/design/feed.md), фрейм выбора режима: [280-10679](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10679).
+Фича `feed` — общая доменная модель и путь фильтрации выдачи мест и событий. FE-F00 предоставляет выбор режима и проверку завершённости профиля; FE-F01 в одиночном режиме загружает категории, валидирует фильтры и вызывает выдачу кандидатов. Спецификация: [docs/specs/feed-v1/implementation.md](../../../../../../../../docs/specs/feed-v1/implementation.md#fe-f01--фильтры-подборки), дизайн: [docs/design/feed.md](../../../../../../../../docs/design/feed.md).
 
 ## Бизнес-логика
 
 - Вкладка «Лента» таббара открывает экран «Выбираем вместе»; таббар виден только на нём, последующие шаги открываются поверх без таббара с кнопкой «Назад» в `SrTopBar`.
-- Карточка «На одном устройстве» (`Icon/user` → `SrIcon.Profile`) ведёт в сценарий FE-F01 в одиночном режиме; карточка «На нескольких устройствах» (`Icon/users` → `SrIcon.People`) — в сценарий FE-F04. До реализации FE-F01/FE-F04 обе карточки открывают явные заглушки-точки входа (`FeedModeState.stub` → `FeedStepScreen`), сценарий не обрывается молча.
+- Карточка «На одном устройстве» (`Icon/user` → `SrIcon.Profile`) открывает фильтры FE-F01; карточка комнаты (`Icon/users` → `SrIcon.People`) пока ведёт в явную заглушку FE-F04.
 - Вход «Свайпать события» с Главной открывает тот же экран с предвыбранным `kind=EVENT` (`MainViewModel.navigateToFeedWithEventsKind`); предвыбранный тип хранится в `FeedModeState.pendingKind` и пробрасывается в FE-F01 при выборе режима.
 - Сценарии ленты доступны только с завершённым профилем: при входе выполняется проверка `GET /v1/me profileComplete`; неполный профиль или `403 PROFILE_INCOMPLETE` автоматически открывает завершение регистрации (`RegistrationViewModel.openProfileCompletion`). Ошибка проверки блокирует выбор и предлагает повторить запрос.
 - Бюджет в фильтрах общий (`budgetTotalMinor`, копейки); цена карточки — на человека; проверку `price * partySize <= budgetTotal` выполняет сервер.
+- FE-F01 принимает один `PLACE` или `EVENT`, серверную категорию данного типа или «Все», дату только для `EVENT`, необязательный общий бюджет и число участников. Отрицательный/нецелый бюджет и число участников меньше 1 при заданном бюджете блокируют отправку с ошибкой у поля.
+- После отправки фильтров вызывается `GET /v1/feed/candidates`; экран показывает полученные названия карточек и кнопку «Изменить фильтры», возвращающую к сохранённым значениям. Полноценный swipe-контроллер относится к FE-F02 и ещё не подключён.
 - Комната: фазы `LOBBY/VOTING/REFRESHING/MATCHED/EXHAUSTED/CLOSED`; snapshot хранит только свои голоса (`myVotes`), устаревшие версии (`version` меньше текущей) игнорируются; long polling — один открытый `GET /rooms/{id}?afterVersion=&waitSeconds=25`, `204` — немедленный повтор, сетевая ошибка — повтор с задержкой 1.5 c.
 
 ## Архитектура
@@ -29,17 +31,20 @@
   - `ObserveRoomUseCase(roomId)` — `Flow<RoomSnapshot>` long polling.
 - Models: `FeedKind{PLACE,EVENT}`, `FeedFilters(kind, categoryId?, localDate?, budgetTotalMinor?, partySize)`, `FeedCard` (проекция `CatalogCard`, цена в копейках + подпись), `FeedRef`, `FeedPage`, `SwipeDecision{LIKE,SKIP}`, `RoomSnapshot` (зеркало DTO `Room`: фаза, состав, раунд, только свои голоса, `version`, `result.winner?`), `RoomPhase`, `RoomMember`, `RoomInvite`, `FeedError` (коды мобильного контракта: `ProfileIncomplete`, `InviteExpired`, `RoomNotFound`, `InvalidState`, `CursorExpired`, `Transport`).
 - Интерфейсы: `FeedRepository`, `RoomRepository`.
+- FE-F01: `FeedCategoryRepository` и `GetFeedCategoriesUseCase` загружают доступные категории.
 
 ### Data Layer (`feed/data`)
 
 - Repository: `BackendFeedAccessRepository` (`GET /v1/me`, проверка доступа); `BackendFeedRepository` (`GET /v1/feed/candidates`), `BackendRoomRepository` (`POST /v1/rooms`, `POST /v1/rooms/{id}/invites`, `POST /v1/room-invites/join`, `POST /v1/rooms/{id}/start`, `PUT /v1/rooms/{id}/rounds/{roundId}/votes/{kind}/{candidateId}`, `PUT .../completion`, `GET /v1/rooms/{id}` + long polling) — обе через общий `BackendApi` (auth, refresh, idempotency keys).
 - `FeedMappers` — DTO мобильного контракта → доменные модели и коды ошибок; транспортные типы наружу не утекают.
+- `BackendFeedCategoryRepository` читает `GET /v1/catalog/categories`.
 - `FeedContract` — единый источник формы query `candidates` и тела `start` (использует и унаследованный `party/data/BackendPartyRepository`).
 
 ### Presentation Layer (`feed/presentation`)
 
 - ViewModel: `FeedModeViewModel(CheckFeedAccessUseCase)`; State: `FeedModeState(pendingKind, busy, profileIncomplete, error, stub)`; Events: `FeedModeEvent` — `OpenedFromTab`, `OpenedWithEventsKind`, `SingleDeviceSelected`, `MultiDeviceSelected`, `DismissNotice`, `RetryProfileCheck`, `CompleteProfileSelected`. Методы `onError(FeedError)` (реактивный `403 PROFILE_INCOMPLETE`) и `onRegistrationCompleted()`.
 - Экраны: `FeedModeScreen` (фрейм 280-10679: `SrTopBar` «Лента», заголовок, две стекло-карточки с иконками) и `FeedStepScreen` (последующий шаг без таббара, «Назад» в `SrTopBar`). Фон — градиент Главной (`FeedDesign.ScreenGradient` из токенов `SrColors.Base/Tint/GlassIris`), карточки используют `SrChoiceSurface` и `SrShapes.Card`; без backdrop применяется подложка `color/surface/solid`.
+- FE-F01: `FeedModeViewModel` хранит черновик фильтров, загруженные `FeedCategoryOption`, ошибки и текущие результаты; `FeedModeScreen` рисует выбор типа и категории в переносящемся по строкам ряду чипов (включая «Все»), `SrDateField` для даты события (передаёт ISO `YYYY-MM-DD`), бюджет, число участников, результат загрузки и возврат к фильтрам. Экран фильтров использует заголовок `SrTopBar` «Фильтры»; основная кнопка подписана «Показать подборку».
 - Навигация: `NavigationMain` рендерит `FeedModeScreen` для `Destination.FeedScreen`, таббар скрывается при `stub != null`; `MainViewModel.navigateToFeedWithEventsKind()` — вход с Главной; `RegistrationViewModel.openProfileCompletion()` — маршрутизация незавершённого профиля.
 
 ## Зависимости
@@ -59,10 +64,10 @@
 ## Особенности реализации
 
 - Рефакторинг, а не переписывание: канонические типы вынесены из `party` в `feed/domain`; `party/data/BackendPartyRepository` больше не парсит контракт сам — query/тела строит `FeedContract`, DTO разбирает `FeedMappers`, проекции комнаты строятся из `RoomSnapshot`. Deeplink-приглашения (`srastem://…token=…`) сохранены: платформы открывают `Destination.RoomScreen` и вызывают `PartyViewModel.acceptInvite`.
-- Точки входа FE-F01/FE-F04 — явные заглушки (`FeedModeStub`): видимый шаг с названием пакета, пояснением и возвратом; молчаливых обрывов нет. Заглушки убираются по мере реализации пакетов.
-- Проверка профиля при входе блокирует выбор при ошибке сети до успешного повтора. Обработчик ошибок будущих сценариев требуется подключить при реализации FE-F01/FE-F04; пока они являются заглушками.
+- FE-F04 остаётся явной заглушкой (`FeedModeStub`) до реализации комнаты.
+- Проверка профиля при входе блокирует выбор при ошибке сети до успешного повтора. FE-F01 отображает ошибку загрузки категорий или кандидатов в состоянии экрана.
 - Платформенные отличия: liquid glass доступен на Android API 31+ и iOS с `UIVisualEffectView`; ниже — полупрозрачная заливка/`color/surface/solid` (см. `uikit/Glass.*`). Long polling использует socket timeout 35 c при `waitSeconds=25` контракта.
-- Известные ограничения: FE-F01…FE-F06 не реализованы (свайп, фильтры, комната — следующие пакеты); серверное поведение (курсоры, majority) не проверяется клиентом.
+- Известные ограничения: FE-F02 swipe-интерфейс и FE-F04 комната ещё не подключены. API курсоры после первой страницы не запрашиваются.
 
 ## Тестовые сценарии
 

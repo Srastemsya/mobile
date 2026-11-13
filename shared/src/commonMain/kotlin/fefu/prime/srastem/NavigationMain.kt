@@ -135,7 +135,7 @@ private fun MainNavigation(
     val eventListUnderGlass = currentDestination == Destination.EventsScreen && eventState.page == EventPage.LIST
 
     FeedBackHandler(enabled = currentDestination == Destination.FeedScreen) {
-        if (feedState.stub != null) feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
+        if (feedState.stub != null || feedState.filterOpen || feedState.cards.isNotEmpty() || feedState.feedError != null) feedModeViewModel.onEvent(FeedModeEvent.DismissNotice)
         else viewModel.backFromFeed()
     }
 
@@ -192,9 +192,9 @@ private fun MainNavigation(
                 )
             }
             // AC-03: таббар виден только на экране выбора режима ленты; последующие шаги
-            // (заглушки FE-F01/FE-F04, шаги комнаты) открываются поверх без таббара.
+            // (FE-F01 filters/results, FE-F04 stub, room steps) open over it without the tab bar.
             val showBottomNavigation = currentDestination != Destination.MapScreen &&
-                (currentDestination != Destination.FeedScreen || feedState.stub == null) &&
+                (currentDestination != Destination.FeedScreen || (feedState.stub == null && !feedState.filterOpen && feedState.cards.isEmpty() && feedState.feedError == null)) &&
                 (currentDestination != Destination.Profile || profileState.page == ProfilePage.HOME) &&
                 (currentDestination != Destination.EventsScreen || eventState.page == EventPage.LIST) &&
                 (currentDestination != Destination.RoomScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE)

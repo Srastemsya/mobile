@@ -117,6 +117,36 @@ class FeedMappersTest {
     }
 
     @Test
+    fun eventCandidateQuerySerializesValidatedFiltersAsHttpQuery() {
+        // Mirrors the public GET /v1/feed/candidates query contract: budget is RUB minor units.
+        val query = FeedContract.candidatesQuery(
+            FeedFilters(
+                kind = FeedKind.EVENT,
+                categoryId = "music",
+                localDate = "2026-11-20",
+                budgetTotalMinor = 125_000L,
+                partySize = 3,
+            ),
+            cursor = null,
+        )
+
+        assertEquals(
+            "/v1/feed/candidates?kind=EVENT&categoryId=music&localDate=2026-11-20&budgetTotalMinor=125000&partySize=3",
+            query,
+        )
+    }
+
+    @Test
+    fun placeCandidateQueryOmitsEventDateAndNullOptionalFilters() {
+        val query = FeedContract.candidatesQuery(
+            FeedFilters(kind = FeedKind.PLACE, categoryId = null, localDate = null, budgetTotalMinor = null, partySize = null),
+            cursor = null,
+        )
+
+        assertEquals("/v1/feed/candidates?kind=PLACE", query)
+    }
+
+    @Test
     fun startBodyCarriesTotalBudgetInMinorUnits() {
         val body = FeedContract.startBody(FeedFilters(FeedKind.PLACE, budgetTotalMinor = 450_00, partySize = 3))
         val filters = body["filters"]!!.jsonObject
