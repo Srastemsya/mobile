@@ -32,4 +32,8 @@ sealed interface FeedModeEvent {
     data object UndoSwipe : FeedModeEvent
     data object SwipeFinished : FeedModeEvent
     data object SwipePoolReady : FeedModeEvent
+    data object OpenCatalogDetails : FeedModeEvent
+    data object CloseCatalogDetails : FeedModeEvent
+    data object RetryCatalogDetails : FeedModeEvent
+    data object RetryNextPage : FeedModeEvent
 }

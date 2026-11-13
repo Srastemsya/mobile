@@ -36,6 +36,8 @@ class FakeFeedRepository : FeedRepository {
         lastCursor = cursor
         return page
     }
+
+    override suspend fun getCatalogDetails(ref: FeedRef) = CatalogDetails(ref, "Title", "Description", "food", "Address", null, null, "Бесплатно", null, null)
 }
 
 class FakeRoomRepository : RoomRepository {

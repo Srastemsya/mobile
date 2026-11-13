@@ -2,6 +2,7 @@ package fefu.prime.srastem.feed.presentation
 
 import fefu.prime.srastem.feed.domain.FeedKind
 import fefu.prime.srastem.feed.domain.FeedCard
+import fefu.prime.srastem.feed.domain.CatalogDetails
 
 data class FeedCategoryOption(val id: String, val label: String, val kinds: List<String>)
 
@@ -26,7 +27,12 @@ data class FeedModeState(
     val fieldError: String? = null,
     val cards: List<FeedCard> = emptyList(),
     val feedError: String? = null,
+    val feedExhausted: Boolean = false,
     val swipe: FeedSwipeState = FeedSwipeState(),
+    val chosen: FeedCard? = null,
+    val catalogDetails: CatalogDetails? = null,
+    val loadingDetails: Boolean = false,
+    val detailsError: String? = null,
     val contextLabel: String = "Одно устройство · общий бюджет",
 )
 

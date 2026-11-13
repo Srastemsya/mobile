@@ -7,6 +7,7 @@ import fefu.prime.srastem.feed.domain.FeedError
 import fefu.prime.srastem.feed.domain.FeedKind
 import fefu.prime.srastem.feed.domain.FeedFilters
 import fefu.prime.srastem.feed.domain.GetFeedCandidatesUseCase
+import fefu.prime.srastem.feed.domain.GetCatalogDetailsUseCase
 import fefu.prime.srastem.feed.domain.GetFeedCategoriesUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ class FeedModeViewModel(
     private val profileGate: CheckFeedAccessUseCase,
     private val getCategories: GetFeedCategoriesUseCase? = null,
     private val getCandidates: GetFeedCandidatesUseCase? = null,
+    private val getCatalogDetails: GetCatalogDetailsUseCase? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FeedModeState())
@@ -44,10 +46,13 @@ class FeedModeViewModel(
             is FeedModeEvent.PartySizeChanged -> _state.update { it.copy(partySizeText = event.value) }
             FeedModeEvent.SubmitFilters -> submitFilters()
             FeedModeEvent.ChangeFilters -> _state.update { it.copy(filterOpen = true, feedError = null) }
-            is FeedModeEvent.SwipeDecided -> _state.update { it.copy(swipe = it.swipe.decide(event.decision)) }
+            is FeedModeEvent.SwipeDecided -> decideSwipe(event.decision)
             FeedModeEvent.UndoSwipe -> _state.update { it.copy(swipe = it.swipe.undo()) }
             FeedModeEvent.SwipeFinished -> _state.update { it.copy(swipe = it.swipe.copy(loadingNextPool = true)) }
             FeedModeEvent.SwipePoolReady -> _state.update { it.copy(swipe = it.swipe.copy(loadingNextPool = false)) }
+            FeedModeEvent.OpenCatalogDetails, FeedModeEvent.RetryCatalogDetails -> loadCatalogDetails()
+            FeedModeEvent.CloseCatalogDetails -> _state.update { it.copy(catalogDetails = null, detailsError = null) }
+            FeedModeEvent.RetryNextPage -> loadNextPage()
         }
     }
 
@@ -98,10 +103,72 @@ class FeedModeViewModel(
         if (getCandidates == null) { _state.update { it.copy(fieldError = "Загрузка подборки недоступна") }; return }
         _state.update { it.copy(busy = true, fieldError = null, feedError = null) }
         viewModelScope.launch {
-            getCandidates(filters).onSuccess { page -> _state.update { it.copy(busy = false, filterOpen = false, cards = page.items, swipe = FeedSwipeState.fromCandidates(page.items), feedError = if (page.items.isEmpty()) "Подходящих вариантов пока нет. Измените фильтры." else null) } }
+            getCandidates(filters).onSuccess { page -> _state.update { it.copy(busy = false, filterOpen = false, cards = page.items, chosen = null, swipe = FeedSwipeState.fromCandidates(page.items, page.nextCursor), feedError = null, feedExhausted = page.items.isEmpty() && page.nextCursor == null) } }
                 .onFailure { error -> _state.update { it.copy(busy = false, feedError = error.message ?: "Не удалось загрузить подборку") } }
         }
     }
+
+    private fun decideSwipe(decision: fefu.prime.srastem.feed.domain.SwipeDecision) {
+        val current = _state.value
+        val swipe = current.swipe
+        if (swipe.current == null || swipe.loadingNextPool || current.chosen != null) return
+        if (decision == fefu.prime.srastem.feed.domain.SwipeDecision.LIKE) {
+            _state.update { it.copy(chosen = swipe.current, feedError = null) }
+            return
+        }
+        val after = swipe.decide(decision)
+        if (after.current != null) {
+            _state.update { it.copy(swipe = after) }
+            return
+        }
+        if (swipe.queuedCards.isNotEmpty()) {
+            _state.update { it.copy(swipe = after) }
+            return
+        }
+        val cursor = swipe.nextCursor
+        if (cursor == null || getCandidates == null) {
+            _state.update { it.copy(swipe = after, feedError = null, feedExhausted = true) }
+            return
+        }
+        _state.update { it.copy(swipe = after, feedError = null, feedExhausted = false) }
+        loadNextPage()
+    }
+
+    private fun loadNextPage() {
+        val current = _state.value
+        val cursor = current.swipe.nextCursor ?: return
+        val getCandidates = getCandidates ?: return
+        val filters = current.toFeedFilters()
+        _state.update { it.copy(swipe = it.swipe.copy(loadingNextPool = true), feedError = null) }
+        viewModelScope.launch {
+            getCandidates(filters, cursor).onSuccess { page ->
+                _state.update { state ->
+                    if (page.items.isEmpty()) state.copy(swipe = FeedSwipeState(nextCursor = page.nextCursor), feedError = null, feedExhausted = page.nextCursor == null)
+                    else state.copy(swipe = FeedSwipeState.fromCandidates(page.items, page.nextCursor), feedError = null, feedExhausted = false)
+                }
+            }.onFailure { error ->
+                _state.update { it.copy(swipe = it.swipe.copy(loadingNextPool = false), feedExhausted = false, feedError = error.message ?: "Не удалось обновить подборку") }
+            }
+        }
+    }
+
+    private fun loadCatalogDetails() {
+        val ref = _state.value.chosen?.ref ?: return
+        if (getCatalogDetails == null) return
+        _state.update { it.copy(loadingDetails = true, detailsError = null, catalogDetails = null) }
+        viewModelScope.launch {
+            getCatalogDetails(ref).onSuccess { details -> _state.update { it.copy(loadingDetails = false, catalogDetails = details) } }
+                .onFailure { error -> _state.update { it.copy(loadingDetails = false, detailsError = error.message ?: "Не удалось загрузить подробности") } }
+        }
+    }
+
+    private fun FeedModeState.toFeedFilters() = FeedFilters(
+        kind = kind,
+        categoryId = categoryId,
+        localDate = localDate.takeIf { kind == FeedKind.EVENT && it.isNotBlank() },
+        budgetTotalMinor = budgetRubles.toLongOrNull()?.times(100),
+        partySize = partySizeText.toIntOrNull()?.takeIf { budgetRubles.isNotBlank() },
+    )
 
     private fun checkProfile() {
         _state.update { it.copy(busy = true, error = null) }

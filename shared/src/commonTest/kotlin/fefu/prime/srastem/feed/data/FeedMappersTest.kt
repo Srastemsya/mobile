@@ -79,6 +79,26 @@ class FeedMappersTest {
     }
 
     @Test
+    fun fullCatalogDetailsSupportsPlaceWrapperAndEventDto() {
+        val place = FeedMappers.details(kotlinx.serialization.json.Json.parseToJsonElement("""
+            {"card":{"ref":{"kind":"PLACE","id":"p-1"},"title":"Кофейня","categoryId":"food","price":{"amountMinor":12000,"currency":"RUB"},"location":{"address":"Светланская, 1"},"cover":{"url":"https://example.test/cover.jpg"}},"description":"Тихое место."}
+        """.trimIndent()).jsonObject)
+        val event = FeedMappers.details(kotlinx.serialization.json.Json.parseToJsonElement("""
+            {"id":"e-2","title":"Квиз","description":"Вечер игры","categoryId":"culture","price":null,"location":{"address":"Центр"},"startsAt":"2026-11-15T19:00:00+10:00","endsAt":"2026-11-15T21:00:00+10:00","admission":{"type":"REGISTRATION","remainingCount":4},"cover":null}
+        """.trimIndent()).jsonObject)
+
+        assertEquals("p-1", place.ref.id)
+        assertEquals("Кофейня", place.title)
+        assertEquals("Тихое место.", place.description)
+        assertEquals("food", place.categoryId)
+        assertEquals("120 ₽", place.priceLabel)
+        assertEquals("e-2", event.ref.id)
+        assertEquals("Вечер игры", event.description)
+        assertEquals("2026-11-15T19:00:00+10:00", event.startsAt)
+        assertEquals("Осталось мест: 4", event.admissionLabel)
+    }
+
+    @Test
     fun unknownPhasesAndKindsFallBackToClosedAndPlace() {
         val json = kotlinx.serialization.json.Json.parseToJsonElement(
             """{ "id": "r", "ownerId": "u", "state": "SOMETHING_NEW", "version": 1 }""",

@@ -149,10 +149,15 @@ class FeedModeViewModelTest {
 
     private class CapturingFeedRepository : FeedRepository {
         val submitted = mutableListOf<FeedFilters>()
+        val cursors = mutableListOf<String?>()
+        var pages = mutableListOf<FeedPage>()
         override suspend fun getCandidates(filters: FeedFilters, cursor: String?): FeedPage {
             submitted += filters
-            return FeedPage(listOf(FeedCard(FeedRef(filters.kind, "id-${submitted.size}"), "Card", "", "", null, "", "", null)), null)
+            cursors += cursor
+            return if (pages.isNotEmpty()) pages.removeAt(0)
+            else FeedPage(listOf(FeedCard(FeedRef(filters.kind, "id-${submitted.size}"), "Card", "", "", null, "", "", null)), null)
         }
+        override suspend fun getCatalogDetails(ref: FeedRef) = fefu.prime.srastem.feed.domain.CatalogDetails(ref, "Title", "Description", "food", "Address", null, null, "Бесплатно", null, null)
     }
 
     private fun filteringVm(repository: CapturingFeedRepository) = FeedModeViewModel(
@@ -176,6 +181,38 @@ class FeedModeViewModelTest {
 
         assertEquals(listOf(FeedFilters(FeedKind.EVENT, "music", "2026-11-20", 125_000L, 3)), repository.submitted)
         assertFalse(viewModel.state.value.filterOpen)
+    }
+
+    @Test
+    fun firstLikeImmediatelyShowsChosenResultWithoutRequestingAnotherPage() = runTest {
+        val repository = CapturingFeedRepository()
+        repository.pages += FeedPage(listOf(FeedCard(FeedRef(FeedKind.EVENT, "event-1"), "Event", "music", "Бесплатно", 0, "Владивосток", "Описание", null)), "next")
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.KindChanged(FeedKind.EVENT))
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+
+        viewModel.onEvent(FeedModeEvent.SwipeDecided(fefu.prime.srastem.feed.domain.SwipeDecision.LIKE))
+
+        assertEquals("event-1", viewModel.state.value.chosen?.ref?.id)
+        assertEquals("Event", viewModel.state.value.chosen?.title)
+        assertEquals(listOf<String?>(null), repository.cursors)
+    }
+
+    @Test
+    fun skippingLastTenCandidatesAutomaticallyLoadsNextCursorPage() = runTest {
+        val repository = CapturingFeedRepository()
+        val first = (0 until 10).map { FeedCard(FeedRef(FeedKind.PLACE, "p$it"), "Place $it", "", "", null, "", "", null) }
+        val next = FeedCard(FeedRef(FeedKind.PLACE, "next"), "Next place", "", "", null, "", "", null)
+        repository.pages += FeedPage(first, "cursor-next")
+        repository.pages += FeedPage(listOf(next), null)
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+
+        repeat(10) { viewModel.onEvent(FeedModeEvent.SwipeDecided(fefu.prime.srastem.feed.domain.SwipeDecision.SKIP)) }
+
+        assertEquals(listOf(null, "cursor-next"), repository.cursors)
+        assertEquals("next", viewModel.state.value.swipe.current?.ref?.id)
+        assertEquals(0, viewModel.state.value.swipe.index)
     }
 
     @Test

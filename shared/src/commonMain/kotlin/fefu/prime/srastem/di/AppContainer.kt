@@ -22,6 +22,7 @@ import fefu.prime.srastem.feed.domain.CreateInviteUseCase
 import fefu.prime.srastem.feed.domain.CreateRoomUseCase
 import fefu.prime.srastem.feed.domain.FeedRepository
 import fefu.prime.srastem.feed.domain.GetFeedCandidatesUseCase
+import fefu.prime.srastem.feed.domain.GetCatalogDetailsUseCase
 import fefu.prime.srastem.feed.domain.GetFeedCategoriesUseCase
 import fefu.prime.srastem.feed.domain.JoinRoomUseCase
 import fefu.prime.srastem.feed.domain.ObserveRoomUseCase
@@ -94,6 +95,7 @@ class AppContainer(
         ),
         getCategories = GetFeedCategoriesUseCase(BackendFeedCategoryRepository(api)),
         getCandidates = getFeedCandidates,
+        getCatalogDetails = GetCatalogDetailsUseCase(feedRepository),
     )
 
     fun createProfileViewModel() = ProfileViewModel(profileRepository)

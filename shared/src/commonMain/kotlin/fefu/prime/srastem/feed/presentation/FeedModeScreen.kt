@@ -49,10 +49,16 @@ import fefu.prime.srastem.feed.domain.SwipeDecision
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -121,7 +127,43 @@ fun FeedModeScreen(
         }
         return
     }
-    if (state.cards.isNotEmpty() || state.feedError != null) {
+    if (state.chosen != null) {
+        val chosen = state.chosen
+        val details = state.catalogDetails
+        val kindLabel = if (chosen.ref.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "К мероприятию" else "К месту"
+        Column(
+            modifier.fillMaxSize().background(FeedDesign.ScreenGradient).windowInsetsPadding(WindowInsets.statusBars)
+                .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            SrTopBar(title = if (details != null) "Подробности" else "Вы выбрали", onBack = if (details != null) ({ onEvent(FeedModeEvent.CloseCatalogDetails) }) else null)
+            val cover = details?.coverUrl?.takeIf(String::isNotBlank) ?: chosen.coverUrl
+            Box(Modifier.fillMaxWidth().aspectRatio(0.92f).clip(SrShapes.Card).background(SrColors.Solid), contentAlignment = Alignment.Center) {
+                FeedCover(cover, chosen.title, Modifier.fillMaxSize())
+                SrChip("Вы выбрали", selected = true, onClick = {})
+            }
+            Text(details?.title ?: chosen.title, style = SrType.Display, color = SrColors.Text)
+            val categoryLabel = state.categories.firstOrNull { it.id == chosen.category }?.label
+            val parameters = listOfNotNull(
+                (categoryLabel ?: state.categories.firstOrNull { it.id == details?.categoryId }?.label)?.takeIf(String::isNotBlank),
+                (details?.priceLabel ?: chosen.priceLabel).takeIf(String::isNotBlank),
+                details?.address?.takeIf(String::isNotBlank) ?: chosen.addressOrDate.takeIf(String::isNotBlank),
+                details?.startsAt?.let(::displayCatalogTime)?.takeIf(String::isNotBlank),
+                details?.admissionLabel,
+            )
+            if (parameters.isNotEmpty()) Text(parameters.joinToString(" · "), style = SrType.Body, color = SrColors.Muted)
+            Text(details?.description ?: chosen.description.ifBlank { "Описание пока не добавлено." }, style = SrType.Body, color = SrColors.Text)
+            if (details == null) {
+                if (state.loadingDetails) CircularProgressIndicator(Modifier.size(32.dp), color = SrColors.Primary)
+                state.detailsError?.let { Text(it, style = SrType.Label, color = SrColors.Error) }
+                SrButton(if (state.detailsError == null) kindLabel else "Повторить", { onEvent(if (state.detailsError == null) FeedModeEvent.OpenCatalogDetails else FeedModeEvent.RetryCatalogDetails) }, loading = state.loadingDetails, enabled = !state.loadingDetails)
+            } else {
+                details.endsAt?.let(::displayCatalogTime)?.takeIf(String::isNotBlank)?.let { Text("До $it", style = SrType.Label, color = SrColors.Muted) }
+            }
+        }
+        return
+    }
+    if (state.cards.isNotEmpty() || state.feedError != null || state.feedExhausted) {
         val swipe = state.swipe
         val card = swipe.current
         val landscape = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
@@ -133,6 +175,7 @@ fun FeedModeScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         CircularProgressIndicator(color = SrColors.Primary)
                         Text("Обновляем подборку", style = SrType.Title, color = SrColors.Text)
+                        Text("Ищем новые варианты по вашим фильтрам", style = SrType.Body, color = SrColors.Muted)
                     }
                 }
             } else if (card != null) {
@@ -161,9 +204,14 @@ fun FeedModeScreen(
                 Text("${(swipe.index + 1).coerceAtMost(swipe.cards.size)} / ${swipe.cards.size}", style = SrType.Label, color = SrColors.Muted)
                 if (!landscape) SrVoteActions(onPass = { decideWithAnimation(SwipeDecision.SKIP) }, onLike = { decideWithAnimation(SwipeDecision.LIKE) }, onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null, progress = swipe.progress)
                 else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { SrVoteActions(onPass = { decideWithAnimation(SwipeDecision.SKIP) }, onLike = { decideWithAnimation(SwipeDecision.LIKE) }, onUndo = if (swipe.canUndo) ({ onEvent(FeedModeEvent.UndoSwipe) }) else null, progress = swipe.progress) }
-            } else Text("Больше вариантов нет", style = SrType.Title, color = SrColors.Text)
-            state.feedError?.let { Text(it, style = SrType.Body, color = SrColors.Muted) }
-            SrButton("Изменить фильтры", { onEvent(FeedModeEvent.ChangeFilters) }, style = SrButtonStyle.Secondary)
+            } else if (state.feedExhausted) {
+                Text("Больше вариантов нет", style = SrType.Title, color = SrColors.Text)
+                Text("Под ваши параметры больше нет подходящих мест и мероприятий.", style = SrType.Body, color = SrColors.Muted)
+            } else {
+                Text(state.feedError ?: "Не удалось обновить подборку", style = SrType.Body, color = SrColors.Error)
+                SrButton("Повторить", { onEvent(FeedModeEvent.RetryNextPage) }, style = SrButtonStyle.Secondary)
+            }
+            if (!swipe.loadingNextPool) SrButton("Изменить фильтры", { onEvent(FeedModeEvent.ChangeFilters) }, style = SrButtonStyle.Secondary)
         }
         return
     }
@@ -319,4 +367,26 @@ private fun String.asSrDate(): SrDate? {
     val month = parts[1].toIntOrNull() ?: return null
     val day = parts[2].toIntOrNull() ?: return null
     return runCatching { SrDate(year, month, day) }.getOrNull()
+}
+
+private fun displayCatalogTime(value: String): String = if (value.length >= 16 && value[4] == '-') {
+    "${value.substring(8, 10)}.${value.substring(5, 7)} · ${value.substring(11, 16)}"
+} else value
+
+@Composable
+private fun FeedCover(url: String?, title: String, modifier: Modifier = Modifier) {
+    var imageFailed by remember(url) { mutableStateOf(url.isNullOrBlank()) }
+    Box(modifier) {
+        // Keep artwork visible while Coil loads and when a temporary cover URL has expired.
+        SrArtwork(SrIllustration.VoteCompact, Modifier.fillMaxSize(), title)
+        if (!imageFailed && !url.isNullOrBlank()) {
+            AsyncImage(
+                model = url,
+                contentDescription = title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                onState = { state -> if (state is AsyncImagePainter.State.Error) imageFailed = true },
+            )
+        }
+    }
 }

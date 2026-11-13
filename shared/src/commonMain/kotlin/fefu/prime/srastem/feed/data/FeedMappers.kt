@@ -2,6 +2,7 @@ package fefu.prime.srastem.feed.data
 
 import fefu.prime.srastem.backend.BackendException
 import fefu.prime.srastem.feed.domain.FeedCard
+import fefu.prime.srastem.feed.domain.CatalogDetails
 import fefu.prime.srastem.feed.domain.FeedError
 import fefu.prime.srastem.feed.domain.FeedFilters
 import fefu.prime.srastem.feed.domain.FeedKind
@@ -55,6 +56,37 @@ internal object FeedMappers {
             description = json["description"]?.jsonPrimitive?.content.orEmpty(),
             coverUrl = json["cover"]?.takeUnless { it == JsonNull }?.jsonObject
                 ?.get("url")?.jsonPrimitive?.content,
+        )
+    }
+
+    fun details(json: JsonObject): CatalogDetails {
+        // PLACE and other non-event details wrap their full card as {card, description}; EVENT
+        // details use the Event object directly.
+        val card = json["card"]?.takeUnless { it == JsonNull }?.jsonObject ?: json
+        val refObject = card["ref"]?.jsonObject
+        val kind = kind(refObject?.get("kind")?.jsonPrimitive?.content ?: card["kind"]?.jsonPrimitive?.content)
+        val id = refObject?.get("id")?.jsonPrimitive?.content ?: card["id"]?.jsonPrimitive?.content.orEmpty()
+        val priceMinor = card["price"]?.takeUnless { it == JsonNull }?.jsonObject
+            ?.get("amountMinor")?.jsonPrimitive?.content?.toLongOrNull()
+        return CatalogDetails(
+            ref = FeedRef(kind, id),
+            title = card["title"]?.jsonPrimitive?.content.orEmpty(),
+            description = json["description"]?.takeUnless { it == JsonNull }?.jsonPrimitive?.content
+                ?: card["description"]?.takeUnless { it == JsonNull }?.jsonPrimitive?.content.orEmpty(),
+            categoryId = card["categoryId"]?.jsonPrimitive?.content.orEmpty(),
+            address = card["location"]?.takeUnless { it == JsonNull }?.jsonObject
+                ?.get("address")?.jsonPrimitive?.content.orEmpty(),
+            startsAt = card["startsAt"]?.takeUnless { it == JsonNull }?.jsonPrimitive?.content,
+            endsAt = card["endsAt"]?.takeUnless { it == JsonNull }?.jsonPrimitive?.content,
+            priceLabel = priceLabel(priceMinor),
+            admissionLabel = card["admission"]?.takeUnless { it == JsonNull }?.jsonObject?.let { admission ->
+                when (admission["type"]?.jsonPrimitive?.content) {
+                    "OPEN" -> "Свободный вход"
+                    "REGISTRATION" -> admission["remainingCount"]?.jsonPrimitive?.content?.let { "Осталось мест: $it" } ?: "По записи"
+                    else -> null
+                }
+            },
+            coverUrl = card["cover"]?.takeUnless { it == JsonNull }?.jsonObject?.get("url")?.jsonPrimitive?.content,
         )
     }
 

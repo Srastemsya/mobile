@@ -10,6 +10,7 @@ data class FeedSwipeState(
     val index: Int = 0,
     val decisions: Map<Int, SwipeDecision> = emptyMap(),
     val loadingNextPool: Boolean = false,
+    val nextCursor: String? = null,
     val lastDecision: SwipeDecision = SwipeDecision.SKIP,
 ) {
     val current: FeedCard? get() = cards.getOrNull(index)
@@ -19,9 +20,10 @@ data class FeedSwipeState(
     companion object {
         const val LOCAL_POOL_SIZE = 10
 
-        fun fromCandidates(candidates: List<FeedCard>): FeedSwipeState = FeedSwipeState(
+        fun fromCandidates(candidates: List<FeedCard>, nextCursor: String? = null): FeedSwipeState = FeedSwipeState(
             cards = candidates.take(LOCAL_POOL_SIZE),
             queuedCards = candidates.drop(LOCAL_POOL_SIZE),
+            nextCursor = nextCursor,
         )
     }
 }
