@@ -11,8 +11,7 @@ class MainViewModel : ViewModel() {
 
     /**
      * Вход в ленту кнопкой «Свайпать события» с Главной (AC-05): экран выбора режима
-     * открывается с предвыбранным `kind=EVENT`. Сбрасывается любым другим переходом,
-     * включая тап вкладки «Лента».
+     * открывается с предвыбранным `kind=EVENT`. Сбрасывается любым другим переходом.
      */
     private val _feedEventsEntry = MutableStateFlow(false)
     val feedEventsEntry: StateFlow<Boolean> = _feedEventsEntry.asStateFlow()

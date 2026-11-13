@@ -27,6 +27,7 @@ fun BottomNavigationBar(
         SrTabBar(
             selected = selectedDestination.toSrTab(),
             onSelect = { onNavigate(it.toDestination()) },
+            tabs = listOf(SrTab.Home, SrTab.Map, SrTab.Events, SrTab.Profile),
         )
     }
 }
@@ -34,7 +35,8 @@ fun BottomNavigationBar(
 private fun Destination.toSrTab(): SrTab = when (this) {
     Destination.MainScreen -> SrTab.Home
     Destination.MapScreen -> SrTab.Map
-    Destination.FeedScreen -> SrTab.Feed
+    // Swipe mode is opened from the Home screen; there is no Feed tab to select.
+    Destination.FeedScreen -> SrTab.Home
     Destination.RoomScreen, Destination.AiScreen -> SrTab.Events
     Destination.EventsScreen -> SrTab.Events
     Destination.Profile -> SrTab.Profile

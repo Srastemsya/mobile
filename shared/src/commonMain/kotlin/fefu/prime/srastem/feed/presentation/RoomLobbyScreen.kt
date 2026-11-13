@@ -24,6 +24,17 @@ fun RoomLobbyScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val clipboard = LocalClipboardManager.current
+    val room = state.room
+    if (room?.phase == RoomPhase.VOTING && !room.myFinished) {
+        RoomVotingScreen(
+            state = state,
+            room = room,
+            viewModel = viewModel,
+            onBack = onBack,
+            modifier = modifier,
+        )
+        return
+    }
     Column(
         modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
             .windowInsetsPadding(WindowInsets.statusBars)
@@ -37,7 +48,6 @@ fun RoomLobbyScreen(
                     viewModel.leave(); onBack()
                 }
             })
-        val room = state.room
         if (state.catalogDetails != null) {
             val details = state.catalogDetails!!
             Text(details.title, style = SrType.Display, color = SrColors.Text)

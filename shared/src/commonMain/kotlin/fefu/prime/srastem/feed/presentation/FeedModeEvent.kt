@@ -2,8 +2,8 @@ package fefu.prime.srastem.feed.presentation
 
 /** События экрана «Выбираем вместе» (FE-F00). */
 sealed interface FeedModeEvent {
-    /** Экран открыт с вкладки «Лента»: предвыбранный тип сбрасывается. */
-    data object OpenedFromTab : FeedModeEvent
+    /** Экран выбора открыт без предвыбора типа. */
+    data object OpenedFromHome : FeedModeEvent
 
     /** Экран открыт входом «Свайпать события» с Главной: предвыбран `kind=EVENT`. */
     data object OpenedWithEventsKind : FeedModeEvent

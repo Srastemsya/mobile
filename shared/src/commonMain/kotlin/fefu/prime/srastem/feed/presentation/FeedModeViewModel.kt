@@ -28,7 +28,7 @@ class FeedModeViewModel(
 
     fun onEvent(event: FeedModeEvent) {
         when (event) {
-            FeedModeEvent.OpenedFromTab -> open(FeedKind.PLACE)
+            FeedModeEvent.OpenedFromHome -> open(FeedKind.PLACE)
             FeedModeEvent.OpenedWithEventsKind -> open(FeedKind.EVENT)
             FeedModeEvent.SingleDeviceSelected -> selectMode(singleDeviceStub())
             FeedModeEvent.MultiDeviceSelected -> selectMode(multiDeviceStub())

@@ -45,7 +45,7 @@ class FeedModeViewModelTest {
     fun tabEntryResetsPendingKindToPlaces() = runTest {
         val viewModel = vm { true }
 
-        viewModel.onEvent(FeedModeEvent.OpenedFromTab)
+        viewModel.onEvent(FeedModeEvent.OpenedFromHome)
 
         assertEquals(FeedKind.PLACE, viewModel.state.value.pendingKind)
         assertFalse(viewModel.state.value.profileIncomplete)
@@ -74,7 +74,7 @@ class FeedModeViewModelTest {
     @Test
     fun profileIncompleteErrorFromScenariosOpensCompletionGate() = runTest {
         val viewModel = vm { true }
-        viewModel.onEvent(FeedModeEvent.OpenedFromTab)
+        viewModel.onEvent(FeedModeEvent.OpenedFromHome)
 
         viewModel.onError(FeedError.ProfileIncomplete())
 
@@ -88,7 +88,7 @@ class FeedModeViewModelTest {
     @Test
     fun transportErrorCanBeRetried() = runTest {
         val viewModel = vm { true }
-        viewModel.onEvent(FeedModeEvent.OpenedFromTab)
+        viewModel.onEvent(FeedModeEvent.OpenedFromHome)
 
         viewModel.onError(FeedError.Transport("Сервер недоступен"))
 
@@ -136,7 +136,7 @@ class FeedModeViewModelTest {
         var available = false
         val viewModel = vm { if (!available) error("offline") else true }
 
-        viewModel.onEvent(FeedModeEvent.OpenedFromTab)
+        viewModel.onEvent(FeedModeEvent.OpenedFromHome)
 
         assertNotNull(viewModel.state.value.error)
         viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)

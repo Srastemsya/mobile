@@ -32,7 +32,7 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
             api.idempotencyKey(scope),
         ).value?.jsonObject ?: error("Сервер не вернул комнату")
         api.clearIdempotencyKey(scope)
-        FeedMappers.room(created, api.userId())
+        mapRoom(created)
     }
 
     override suspend fun createInvite(roomId: String): RoomInvite = guard {
@@ -56,7 +56,7 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
             api.idempotencyKey(scope),
         ).value?.jsonObject ?: error("Сервер не вернул комнату")
         api.clearIdempotencyKey(scope)
-        FeedMappers.room(joined, api.userId())
+        mapRoom(joined)
     }
 
     override suspend fun startRoom(roomId: String, filters: FeedFilters): RoomSnapshot = guard {
@@ -68,7 +68,7 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
         ).value?.jsonObject
             ?: error("Сервер не вернул комнату")
         api.clearIdempotencyKey(scope)
-        FeedMappers.room(started, api.userId())
+        mapRoom(started)
     }
 
     override suspend fun submitVote(
@@ -82,17 +82,17 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
             "/v1/rooms/$roomId/rounds/$roundId/votes/$kind/${candidate.id}",
             jsonObjectOf("choice" to if (decision == SwipeDecision.LIKE) "LIKE" else "PASS"),
         ).value?.jsonObject ?: error("Сервер не вернул комнату")
-        FeedMappers.room(updated, api.userId())
+        mapRoom(updated)
     }
 
     override suspend fun completeRound(roomId: String, roundId: String): RoomSnapshot = guard {
         val updated = api.putEmpty("/v1/rooms/$roomId/rounds/$roundId/completion").value?.jsonObject
             ?: error("Сервер не вернул комнату")
-        FeedMappers.room(updated, api.userId())
+        mapRoom(updated)
     }
 
     override suspend fun getSnapshot(roomId: String): RoomSnapshot = guard {
-        FeedMappers.room(api.get("/v1/rooms/$roomId").jsonObject, api.userId())
+        mapRoom(api.get("/v1/rooms/$roomId").jsonObject)
     }
 
     override fun observeRoom(roomId: String): Flow<RoomSnapshot> = flow {
@@ -103,8 +103,7 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
                 val result =
                     api.getResult("/v1/rooms/$roomId?afterVersion=${room.version}&waitSeconds=25")
                 if (result.status == 204) continue
-                val next =
-                    result.value?.jsonObject?.let { FeedMappers.room(it, api.userId()) } ?: continue
+                val next = result.value?.jsonObject?.let(::mapRoom) ?: continue
                 if (next.version >= room.version) {
                     room = next
                     emit(room)
@@ -121,6 +120,15 @@ class BackendRoomRepository(private val api: BackendApi) : RoomRepository {
         room.phase != fefu.prime.srastem.feed.domain.RoomPhase.MATCHED &&
                 room.phase != fefu.prime.srastem.feed.domain.RoomPhase.EXHAUSTED &&
                 room.phase != fefu.prime.srastem.feed.domain.RoomPhase.CLOSED
+
+    private fun mapRoom(json: kotlinx.serialization.json.JsonObject): RoomSnapshot =
+        FeedMappers.room(json, api.userId()).let { room ->
+            room.copy(
+                candidates = room.candidates.map { card ->
+                    card.copy(coverUrl = api.resolveMediaUrl(card.coverUrl))
+                },
+            )
+        }
 
     private inline fun <T> guard(block: () -> T): T = try {
         block()
