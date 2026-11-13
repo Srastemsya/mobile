@@ -24,7 +24,7 @@
 
 | Пакет | Зависимости по спецификации | Статус | Причина |
 |---|---|---|---|
-| FE-F00 | — | BLOCKED | Сборки Android/iOS прошли; UI приёмка не завершена: недоступен Android runtime и управляемый Simulator UI. См. [test report](FE-F00/test_report.md) и [PM handoff](FE-F00/pm_handoff.md).
+| FE-F00 | — | BLOCKED | Повторная проверка не запущена: недоступно делегирование Developer и независимому Tester в чистых контекстах; iOS отложен. См. [повторную проверку PM](FE-F00/recheck-20261113-220125.md) и [предыдущий test report](FE-F00/test_report.md). |
 | FE-F01 | FE-F00 | BLOCKED | FE-F00 заблокирован до доступности Android runtime и управляемого iOS Simulator UI; зависимость не закрыта. |
 | FE-F02 | FE-F01 | BLOCKED | FE-F01 заблокирован зависимостью от FE-F00. |
 | FE-F03 | FE-F02, стенд BE-D03 | BLOCKED | FE-F02 заблокирован по цепочке от FE-F00. |
