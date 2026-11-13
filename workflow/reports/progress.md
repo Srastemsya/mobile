@@ -24,12 +24,12 @@
 
 | Пакет | Зависимости по спецификации | Статус | Причина |
 |---|---|---|---|
-| FE-F00 | — | BLOCKED | Повторная проверка не запущена: недоступно делегирование Developer и независимому Tester в чистых контекстах; iOS отложен. См. [повторную проверку PM](FE-F00/recheck-20261113-220125.md) и [предыдущий test report](FE-F00/test_report.md). |
-| FE-F01 | FE-F00 | BLOCKED | FE-F00 заблокирован до доступности Android runtime и управляемого iOS Simulator UI; зависимость не закрыта. |
-| FE-F02 | FE-F01 | BLOCKED | FE-F01 заблокирован зависимостью от FE-F00. |
-| FE-F03 | FE-F02, стенд BE-D03 | BLOCKED | FE-F02 заблокирован по цепочке от FE-F00. |
-| FE-F04 | FE-F01, стенд BE-D03 | BLOCKED | FE-F01 заблокирован зависимостью от FE-F00. |
-| FE-F05 | FE-F02, FE-F04 | BLOCKED | FE-F02 и FE-F04 заблокированы по цепочке от FE-F00. |
-| FE-F06 | FE-F03, FE-F05 | BLOCKED | FE-F03 и FE-F05 заблокированы по цепочке от FE-F00. |
+| FE-F00 | — | PASS | Повторная Android-приёмка пройдена; iOS исключён текущим scope. См. [test report](FE-F00/recheck-20261113/test_report.md). |
+| FE-F01 | FE-F00 | PASS | Android-клиент: фильтры, валидация, восстановление и query mapping подтверждены; build/host tests и независимая приёмка PASS. Совпадение узких EVENT-фильтров на staging не утверждается. См. [test report](FE-F01/test_report.md) и [Developer report](FE-F01/dev_report.md). |
+| FE-F02 | FE-F01 | READY | FE-F01 пройден; FE-F02 ожидает запуска. |
+| FE-F03 | FE-F02, стенд BE-D03 | BLOCKED | Ожидает FE-F02. |
+| FE-F04 | FE-F01, стенд BE-D03 | READY | FE-F01 пройден; FE-F04 ожидает запуска. |
+| FE-F05 | FE-F02, FE-F04 | BLOCKED | Ожидает FE-F02 и FE-F04. |
+| FE-F06 | FE-F03, FE-F05 | BLOCKED | Ожидает FE-F03 и FE-F05. |
 
 Источник порядка и зависимостей — [спецификация ленты](../../docs/specs/feed-v1/README.md). Спеки пакетов — `workflow/specs/feed-v1/`. Для запуска этой очереди переключить `spec_dir` в config.json на `workflow/specs/feed-v1`.

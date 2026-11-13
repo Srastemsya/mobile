@@ -2,12 +2,16 @@ package fefu.prime.srastem.feed.data
 
 import fefu.prime.srastem.backend.BackendApi
 import fefu.prime.srastem.feed.domain.FeedAccessRepository
+import kotlinx.serialization.json.jsonObject
 
-/**
- * Кэшированный флаг завершённости профиля из сессии (`Session.profileComplete`).
- * Сервер остаётся источником истины: незавершённый профиль получит `403 PROFILE_INCOMPLETE`,
- * который [BackendFeedRepository] и [BackendRoomRepository] маппят в `FeedError.ProfileIncomplete`.
- */
-class BackendFeedAccessRepository(private val api: BackendApi) : FeedAccessRepository {
-    override suspend fun isProfileComplete(): Boolean = api.isProfileComplete()
+/** Проверяет актуальное состояние профиля через мобильный API. */
+class BackendFeedAccessRepository internal constructor(
+    private val getProfile: suspend () -> kotlinx.serialization.json.JsonElement,
+) : FeedAccessRepository {
+    constructor(api: BackendApi) : this({ api.get("/v1/me") })
+    override suspend fun isProfileComplete(): Boolean = try {
+        getProfile().jsonObject["profileComplete"]?.toString() == "true"
+    } catch (error: fefu.prime.srastem.backend.BackendException) {
+        if (error.status == 403 && error.code == "PROFILE_INCOMPLETE") false else throw error
+    }
 }

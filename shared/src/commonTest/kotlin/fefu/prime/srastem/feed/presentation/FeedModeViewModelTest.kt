@@ -1,7 +1,15 @@
 package fefu.prime.srastem.feed.presentation
 
+import fefu.prime.srastem.feed.domain.CheckFeedAccessUseCase
+import fefu.prime.srastem.feed.domain.FeedAccessRepository
 import fefu.prime.srastem.feed.domain.FeedError
 import fefu.prime.srastem.feed.domain.FeedKind
+import fefu.prime.srastem.feed.domain.FeedFilters
+import fefu.prime.srastem.feed.domain.FeedRepository
+import fefu.prime.srastem.feed.domain.FeedPage
+import fefu.prime.srastem.feed.domain.FeedCard
+import fefu.prime.srastem.feed.domain.FeedRef
+import fefu.prime.srastem.feed.domain.GetFeedCandidatesUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -23,6 +31,9 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedModeViewModelTest {
+    private fun vm(gate: suspend () -> Boolean) = FeedModeViewModel(CheckFeedAccessUseCase(object : FeedAccessRepository {
+        override suspend fun isProfileComplete(): Boolean = gate()
+    }))
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -32,7 +43,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun tabEntryResetsPendingKindToPlaces() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
 
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
@@ -42,7 +53,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun homeSwipeEntryPreselectsEventsKind() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
 
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
 
@@ -51,7 +62,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun incompleteProfileBlocksModeCards() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { false })
+        val viewModel = vm { false }
 
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
         assertTrue(viewModel.state.value.profileIncomplete)
@@ -62,7 +73,7 @@ class FeedModeViewModelTest {
 
     @Test
     fun profileIncompleteErrorFromScenariosOpensCompletionGate() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
         viewModel.onError(FeedError.ProfileIncomplete())
@@ -71,25 +82,25 @@ class FeedModeViewModelTest {
         assertNull(viewModel.state.value.stub)
 
         viewModel.onEvent(FeedModeEvent.CompleteProfileSelected)
-        assertFalse(viewModel.state.value.profileIncomplete)
+        assertTrue(viewModel.state.value.profileIncomplete)
     }
 
     @Test
-    fun transportErrorSurfacesMessageWithoutBlockingModes() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+    fun transportErrorCanBeRetried() = runTest {
+        val viewModel = vm { true }
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
         viewModel.onError(FeedError.Transport("Сервер недоступен"))
 
         assertEquals("Сервер недоступен", viewModel.state.value.error)
         assertFalse(viewModel.state.value.profileIncomplete)
-        viewModel.onEvent(FeedModeEvent.DismissNotice)
+        viewModel.onEvent(FeedModeEvent.RetryProfileCheck)
         assertNull(viewModel.state.value.error)
     }
 
     @Test
     fun modeCardsOpenDocumentedStubsAndBackReturnsToChoice() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { true })
+        val viewModel = vm { true }
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
 
         viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)
@@ -109,7 +120,7 @@ class FeedModeViewModelTest {
     @Test
     fun registrationCompletionRechecksGateWithoutLosingPendingKind() = runTest {
         var complete = false
-        val viewModel = FeedModeViewModel(profileGate = { complete })
+        val viewModel = vm { complete }
         viewModel.onEvent(FeedModeEvent.OpenedWithEventsKind)
         assertTrue(viewModel.state.value.profileIncomplete)
 
@@ -121,13 +132,97 @@ class FeedModeViewModelTest {
     }
 
     @Test
-    fun unavailableGateFailsOpenAndReactive403StillProtects() = runTest {
-        val viewModel = FeedModeViewModel(profileGate = { error("offline") })
+    fun unavailableGateBlocksUntilRetry() = runTest {
+        var available = false
+        val viewModel = vm { if (!available) error("offline") else true }
 
         viewModel.onEvent(FeedModeEvent.OpenedFromTab)
 
-        assertFalse(viewModel.state.value.profileIncomplete)
-        viewModel.onError(FeedError.ProfileIncomplete())
-        assertTrue(viewModel.state.value.profileIncomplete)
+        assertNotNull(viewModel.state.value.error)
+        viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)
+        assertNull(viewModel.state.value.stub)
+        available = true
+        viewModel.onEvent(FeedModeEvent.RetryProfileCheck)
+        viewModel.onEvent(FeedModeEvent.SingleDeviceSelected)
+        assertNotNull(viewModel.state.value.stub)
+    }
+
+    private class CapturingFeedRepository : FeedRepository {
+        val submitted = mutableListOf<FeedFilters>()
+        override suspend fun getCandidates(filters: FeedFilters, cursor: String?): FeedPage {
+            submitted += filters
+            return FeedPage(listOf(FeedCard(FeedRef(filters.kind, "id-${submitted.size}"), "Card", "", "", null, "", "", null)), null)
+        }
+    }
+
+    private fun filteringVm(repository: CapturingFeedRepository) = FeedModeViewModel(
+        CheckFeedAccessUseCase(object : FeedAccessRepository {
+            override suspend fun isProfileComplete(): Boolean = true
+        }),
+        getCandidates = GetFeedCandidatesUseCase(repository),
+    )
+
+    @Test
+    fun submittingFiltersMapsAllFieldsAndConvertsRublesToMinorUnits() = runTest {
+        val repository = CapturingFeedRepository()
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.KindChanged(FeedKind.EVENT))
+        viewModel.onEvent(FeedModeEvent.CategoryChanged("music"))
+        viewModel.onEvent(FeedModeEvent.DateChanged("2026-11-20"))
+        viewModel.onEvent(FeedModeEvent.BudgetChanged("1250"))
+        viewModel.onEvent(FeedModeEvent.PartySizeChanged("3"))
+
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+
+        assertEquals(listOf(FeedFilters(FeedKind.EVENT, "music", "2026-11-20", 125_000L, 3)), repository.submitted)
+        assertFalse(viewModel.state.value.filterOpen)
+    }
+
+    @Test
+    fun placeSubmissionOmitsDateAndUnbudgetedPartySize() = runTest {
+        val repository = CapturingFeedRepository()
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.DateChanged("2026-11-20"))
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+
+        assertEquals(listOf(FeedFilters(FeedKind.PLACE)), repository.submitted)
+    }
+
+    @Test
+    fun invalidBudgetAndPartySizeBlockSubmissionWithFieldError() = runTest {
+        val repository = CapturingFeedRepository()
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.BudgetChanged("-1"))
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+        assertTrue(viewModel.state.value.fieldError?.contains("бюджет") == true)
+        assertTrue(repository.submitted.isEmpty())
+
+        viewModel.onEvent(FeedModeEvent.BudgetChanged("500"))
+        viewModel.onEvent(FeedModeEvent.PartySizeChanged("0"))
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+        assertTrue(viewModel.state.value.fieldError?.contains("человек") == true)
+        assertTrue(repository.submitted.isEmpty())
+    }
+
+    @Test
+    fun changingFiltersKeepsValuesAndSubmitsUpdatedFreshQuery() = runTest {
+        val repository = CapturingFeedRepository()
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.KindChanged(FeedKind.EVENT))
+        viewModel.onEvent(FeedModeEvent.CategoryChanged("music"))
+        viewModel.onEvent(FeedModeEvent.DateChanged("2026-11-20"))
+        viewModel.onEvent(FeedModeEvent.BudgetChanged("100"))
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+        viewModel.onEvent(FeedModeEvent.ChangeFilters)
+
+        assertTrue(viewModel.state.value.filterOpen)
+        assertEquals("music", viewModel.state.value.categoryId)
+        assertEquals("2026-11-20", viewModel.state.value.localDate)
+        assertEquals("100", viewModel.state.value.budgetRubles)
+        viewModel.onEvent(FeedModeEvent.CategoryChanged("theatre"))
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+
+        assertEquals(2, repository.submitted.size)
+        assertEquals(FeedFilters(FeedKind.EVENT, "theatre", "2026-11-20", 10_000L, 2), repository.submitted.last())
     }
 }
