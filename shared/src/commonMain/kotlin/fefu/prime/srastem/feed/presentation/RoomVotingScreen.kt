@@ -17,6 +17,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -39,6 +43,7 @@ internal fun RoomVotingScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var filtersVisible by remember { mutableStateOf(false) }
     val card = room.candidates.getOrNull(state.voteIndex)
     val initials = room.members.map { member ->
         member.displayName.trim().split(Regex("\\s+")).filter(String::isNotBlank)
@@ -57,7 +62,11 @@ internal fun RoomVotingScreen(
             onBack = { viewModel.leave(); onBack() },
             actions = {
                 if (state.isOwner) {
-                    SrIconButton(SrIcon.Filter, "Фильтры комнаты", viewModel::openVotingFilters)
+                    SrIconButton(
+                        SrIcon.Filter,
+                        "Фильтры комнаты",
+                        onClick = { filtersVisible = true },
+                    )
                 }
             },
         )
@@ -99,8 +108,8 @@ internal fun RoomVotingScreen(
         }
         state.error?.let { Text(it, style = SrType.Label, color = SrColors.Error) }
     }
-    if (state.votingFiltersOpen) {
-        ModalBottomSheet(onDismissRequest = viewModel::closeVotingFilters) {
+    if (filtersVisible) {
+        ModalBottomSheet(onDismissRequest = { filtersVisible = false }) {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Фильтры комнаты", style = SrType.Title, color = SrColors.Text)
                 Text(
@@ -113,6 +122,16 @@ internal fun RoomVotingScreen(
                     style = SrType.Label,
                     color = SrColors.Text,
                 )
+                room.filters?.categoryId?.let { categoryId ->
+                    val category = state.categories.firstOrNull { it.id == categoryId }?.label ?: categoryId
+                    Text("Категория: $category", style = SrType.Body, color = SrColors.Text)
+                }
+                room.filters?.localDate?.let { date ->
+                    Text("Дата: $date", style = SrType.Body, color = SrColors.Text)
+                }
+                room.filters?.budgetTotalMinor?.let { budget ->
+                    Text("Общий бюджет: ${budget / 100} ₽", style = SrType.Body, color = SrColors.Text)
+                }
             }
         }
     }

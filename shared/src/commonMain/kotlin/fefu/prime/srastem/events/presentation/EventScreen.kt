@@ -22,7 +22,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -106,13 +108,14 @@ fun EventScreen(
 
 @Composable
 private fun EventListPage(state: EventUiState, vm: EventViewModel) {
+    var showCreateSoon by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().height(70.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("События", style = SrType.Display, color = SrColors.Text)
                 Text("Владивосток", style = SrType.Caption, color = SrColors.Muted)
             }
-            SrButton("+ Создать", vm::openCreate, Modifier.size(width = 112.dp, height = 48.dp))
+            SrButton("+ Создать", { showCreateSoon = true }, Modifier.size(width = 112.dp, height = 48.dp))
         }
         Text(
             "Ближайшие события",
@@ -129,6 +132,16 @@ private fun EventListPage(state: EventUiState, vm: EventViewModel) {
             }
             if (state.events.isEmpty()) EmptyEvents()
         }
+    }
+    if (showCreateSoon) {
+        AlertDialog(
+            onDismissRequest = { showCreateSoon = false },
+            title = { Text("Скоро") },
+            text = { Text("Создание событий появится в одном из следующих обновлений.") },
+            confirmButton = {
+                TextButton(onClick = { showCreateSoon = false }) { Text("Понятно") }
+            },
+        )
     }
 }
 

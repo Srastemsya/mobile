@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 enum class ProfilePage { HOME, DETAILS, SAVED, EVENTS }
 
@@ -34,9 +35,19 @@ class ProfileViewModel(
         viewModelScope.launch {
             val profile = repository.getProfile()
             val savedEvents = repository.getSavedEvents()
-            val myEvents = repository.getMyEvents()
+            val myEvents = try {
+                repository.getMyEvents()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
+            }
             _state.update {
-                it.copy(profile = profile, savedEvents = savedEvents, myEvents = myEvents)
+                it.copy(
+                    profile = profile,
+                    savedEvents = savedEvents,
+                    myEvents = myEvents ?: it.myEvents,
+                )
             }
         }
     }

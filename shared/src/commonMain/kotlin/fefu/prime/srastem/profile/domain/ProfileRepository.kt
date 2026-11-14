@@ -17,9 +17,12 @@ data class ProfileEvent(
     val subtitle: String,
     val category: String,
     val status: EventStatus,
+    val kind: ProfileSavedKind = ProfileSavedKind.EVENT,
+    val coverKey: String? = null,
 )
 
 enum class EventStatus { UPCOMING, COMPLETED }
+enum class ProfileSavedKind { EVENT, HOME_COLLECTION }
 
 interface ProfileRepository {
     suspend fun getProfile(): ProfileDetails

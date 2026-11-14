@@ -92,7 +92,6 @@ fun NavigationMain(
 
             registrationState.isVisible -> RegistrationScreen(
                 state = registrationState,
-                onPhoneSelected = registrationViewModel::onPhoneSelected,
                 onEmailSelected = registrationViewModel::onEmailSelected,
                 onContactChanged = registrationViewModel::onContactChanged,
                 onRequestCode = registrationViewModel::onRequestCode,
@@ -335,7 +334,7 @@ private fun DestinationContent(
         ProfileScreen(profileViewModel, modifier = modifier, onOpenEvent = { id ->
             eventViewModel.openEvent(id)
             onNavigate(Destination.EventsScreen)
-        })
+        }, onOpenCollection = { onNavigate(Destination.MapScreen) })
         return
     }
     if (destination == Destination.EventsScreen) {
