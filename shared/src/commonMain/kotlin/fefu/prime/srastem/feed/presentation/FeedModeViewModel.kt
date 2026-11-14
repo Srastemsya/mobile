@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class FeedModeViewModel(
@@ -227,6 +228,20 @@ class FeedModeViewModel(
             return
         }
         val cursor = swipe.nextCursor
+        if (cursor == null && current.kind == FeedKind.PLACE) {
+            _state.update {
+                it.copy(swipe = after.copy(loadingNextPool = true), feedError = null, feedExhausted = false)
+            }
+            viewModelScope.launch {
+                delay(350)
+                _state.update {
+                    if (it.swipe.loadingNextPool && it.swipe.current == null && !it.filterOpen && it.chosen == null) {
+                        it.copy(swipe = FeedSwipeState(), feedExhausted = true)
+                    } else it
+                }
+            }
+            return
+        }
         if (cursor == null || getCandidates == null) {
             _state.update { it.copy(swipe = after, feedError = null, feedExhausted = true) }
             return
