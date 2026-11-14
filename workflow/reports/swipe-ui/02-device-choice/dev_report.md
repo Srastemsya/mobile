@@ -1,0 +1,8 @@
+# Developer report — 02 Выбор устройства
+
+- Revision: `codex/ui-02-device-choice`, based on `0e72b5aa189e77044ac7caaae95513fe5cb70272`.
+- Android build: `androidApp/build/outputs/apk/debug/androidApp-debug.apk`; SHA-256 `97f4446d0e80a7c43cc97691701723de51c7bae6fab24eec57ed91fe64e3ccac`.
+- Changes: screen 02 top bar reads «Лента»; spacing follows the 390 × 844 reference; the two full-width choice surfaces remain full-card tappable. Back uses the feed navigation handler. The multiple-device choice now passes the entry kind to room creation, so «События» reaches screen 10.
+- Public docs: [spec](../../../../docs/specs/swipe-ui/02-device-choice.md), [design](../../../../docs/design/feed.md), [feature](../../../../shared/src/commonMain/kotlin/fefu/prime/srastem/feed/FEATURE.md).
+- Verification: `ANDROID_HOME=/private/tmp/srastemsya-sdk.7DCrTs GRADLE_USER_HOME=/private/tmp/srastemsya-gradle ./gradlew :androidApp:assembleDebug :shared:testAndroid --no-configuration-cache --console=plain` — passed. `git diff --check` — passed. Architecture source review: presentation changes use UI Kit components/tokens; room state carries `FeedKind` without adding data-layer dependencies. Existing literal colors in unrelated `NavigationMain` surfaces remain outside scope.
+- UI evidence: [emulator launch](emulator-launch.png) at 390 × 844. The emulator opens on the sign-in screen. The documented dev OTP fixture is not confirmed for the configured staging backend, so screen 02 and its transitions could not be captured without a profile-complete test session. AC-01 through AC-06 remain unverified on device.

@@ -324,7 +324,7 @@ private fun DestinationContent(
             state = feedState,
             onEvent = { event ->
                 if (event == FeedModeEvent.CompleteProfileSelected) onFeedProfileCompletionRequested()
-                if (event == FeedModeEvent.MultiDeviceSelected) roomLobbyViewModel.openCreate()
+                if (event == FeedModeEvent.MultiDeviceSelected) roomLobbyViewModel.openCreate(feedState.pendingKind)
                 feedModeViewModel.onEvent(event)
             },
             onGoHome = onGoHome,
