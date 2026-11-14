@@ -22,3 +22,7 @@
 Ran the supplied ADB executable with `adb devices -l`. The ADB server failed to start: `could not install *smartsocket* listener: Operation not permitted` and `cannot connect to daemon`. The phone and authenticated app session therefore could not be checked. App data was not cleared, app was not uninstalled, and no install or UI action was attempted. APK hash verification succeeded.
 
 No initial or transition screenshots/video could be recorded because the device was inaccessible.
+
+## Final device input retry
+
+Phone was listed by elevated `adb devices -l`; opening the existing app showed «Открытия» with its usual bottom navigation. One elevated ADB tap was attempted after the user reported the phone unlocked. Android rejected input injection with `SecurityException: Injecting input events requires the caller ... to have the INJECT_EVENTS permission`. A prior swipe attempt had the same denial. No screen 02 UI could be reached; all ACs remain BLOCKED. No app data/session was cleared, reset, uninstalled, or modified by an install.
