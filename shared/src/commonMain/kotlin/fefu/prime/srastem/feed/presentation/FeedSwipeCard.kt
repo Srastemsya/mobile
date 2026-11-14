@@ -48,6 +48,7 @@ internal fun FeedSwipeCardStack(
 ) {
     val scope = rememberCoroutineScope()
     val dragX = remember(card.ref) { Animatable(0f) }
+    var settling by remember(card.ref) { mutableStateOf(false) }
 
     Box(modifier, contentAlignment = Alignment.Center) {
         SwipeCardBackplate(
@@ -70,17 +71,23 @@ internal fun FeedSwipeCardStack(
                 .pointerInput(card.ref) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, amount ->
-                            scope.launch { dragX.snapTo(dragX.value + amount) }
+                            if (!settling) scope.launch { dragX.snapTo(dragX.value + amount) }
+                        },
+                        onDragCancel = {
+                            if (!settling) scope.launch { dragX.animateTo(0f, tween(160)) }
                         },
                         onDragEnd = {
+                            if (settling) return@detectHorizontalDragGestures
                             val decision = when {
                                 dragX.value > 80f -> SwipeDecision.LIKE
                                 dragX.value < -80f -> SwipeDecision.SKIP
                                 else -> null
                             }
+                            settling = true
                             scope.launch {
                                 if (decision == null) {
                                     dragX.animateTo(0f, tween(160))
+                                    settling = false
                                 } else {
                                     dragX.animateTo(
                                         if (decision == SwipeDecision.LIKE) 900f else -900f,

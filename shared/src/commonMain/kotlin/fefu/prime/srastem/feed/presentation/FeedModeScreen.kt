@@ -210,6 +210,7 @@ fun FeedModeScreen(
         Column(
             modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
                 .windowInsetsPadding(WindowInsets.statusBars)
+                .windowInsetsPadding(WindowInsets.navigationBars)
                 .then(if (landscape) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -258,12 +259,6 @@ fun FeedModeScreen(
                     modifier = Modifier.fillMaxWidth()
                         .then(if (landscape) Modifier.height(340.dp) else Modifier.weight(1f)),
                     onSwipe = { onEvent(FeedModeEvent.SwipeDecided(it)) },
-                )
-                VoteDirectionHint()
-                Text(
-                    "${(swipe.index + 1).coerceAtMost(swipe.cards.size)} / ${swipe.cards.size}",
-                    style = SrType.Label,
-                    color = SrColors.Muted
                 )
             } else if (state.feedExhausted) {
                 Text("Больше вариантов нет", style = SrType.Display, color = SrColors.Text)
