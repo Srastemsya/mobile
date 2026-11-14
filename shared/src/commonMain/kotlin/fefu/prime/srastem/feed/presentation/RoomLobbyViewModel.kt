@@ -248,13 +248,17 @@ class RoomLobbyViewModel(
         viewModelScope.launch {
             submitVote?.invoke(room.id, roundId, card.ref, decision)
                 ?.onSuccess { next ->
-                    applyRoom(next); _state.update {
-                    it.copy(
-                        voteIndex = (current.voteIndex + 1).coerceAtMost(
-                            next.candidates.size
-                        )
-                    )
-                }
+                    applyRoom(next)
+                    _state.update {
+                        it.copy(voteIndex = (current.voteIndex + 1).coerceAtMost(next.candidates.size))
+                    }
+                    if (next.phase == RoomPhase.VOTING && !next.myFinished &&
+                        next.candidates.isNotEmpty() && next.candidates.all { it.ref.id in next.myVotes }
+                    ) {
+                        completeRound?.invoke(next.id, next.roundId ?: roundId)
+                            ?.onSuccess(::applyRoom)
+                            ?.onFailure { recover(next.id, it) }
+                    }
                 }
                 ?.onFailure { recover(room.id, it) }
             _state.update { it.copy(busy = false) }
