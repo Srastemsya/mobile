@@ -11,8 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,6 +28,8 @@ import ru.srastemsya.uikit.SrAvatarGroup
 import ru.srastemsya.uikit.SrButton
 import ru.srastemsya.uikit.SrColors
 import ru.srastemsya.uikit.SrTopBar
+import ru.srastemsya.uikit.SrIcon
+import ru.srastemsya.uikit.SrIconButton
 import ru.srastemsya.uikit.SrType
 
 @Composable
@@ -32,6 +40,7 @@ internal fun RoomVotingScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var filtersVisible by remember { mutableStateOf(false) }
     val card = room.candidates.getOrNull(state.voteIndex)
     val initials = room.members.map { member ->
         member.displayName.trim().split(Regex("\\s+")).filter(String::isNotBlank)
@@ -47,6 +56,13 @@ internal fun RoomVotingScreen(
         SrTopBar(
             title = if (room.filters?.kind == FeedKind.EVENT) "Выбор события" else "Выбор места",
             onBack = { viewModel.leave(); onBack() },
+            actions = {
+                if (state.isOwner) SrIconButton(
+                    SrIcon.Filter,
+                    description = "Фильтры комнаты",
+                    onClick = { filtersVisible = true },
+                )
+            },
         )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -59,11 +75,6 @@ internal fun RoomVotingScreen(
             )
             SrAvatarGroup(initials)
         }
-        Text(
-            "Раунд ${room.roundNumber ?: 1} · ${state.voteIndex + 1}/${room.candidates.size}",
-            style = SrType.Caption,
-            color = SrColors.Muted,
-        )
         if (card != null) {
             val kindLabel = if (card.ref.kind == FeedKind.EVENT) "Событие" else "Место"
             val metadata = listOfNotNull(
@@ -75,9 +86,9 @@ internal fun RoomVotingScreen(
                 card = card,
                 metadata = metadata,
                 modifier = Modifier.fillMaxWidth().weight(1f),
+                swipeEnabled = !state.busy,
                 onSwipe = viewModel::vote,
             )
-            VoteDirectionHint()
         } else {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 if (state.busy) CircularProgressIndicator(color = SrColors.Primary)
@@ -93,4 +104,19 @@ internal fun RoomVotingScreen(
         }
         state.error?.let { Text(it, style = SrType.Label, color = SrColors.Error) }
     }
+    if (filtersVisible) AlertDialog(
+        onDismissRequest = { filtersVisible = false },
+        title = { Text("Фильтры комнаты") },
+        text = {
+            Text(
+                listOfNotNull(
+                    if (room.filters?.kind == FeedKind.EVENT) "События" else "Места",
+                    room.filters?.categoryId?.let { "Категория: $it" },
+                    room.filters?.localDate?.let { "Дата: $it" },
+                    room.filters?.budgetTotalMinor?.let { "Бюджет: ${it / 100} ₽" },
+                ).joinToString("\n"),
+            )
+        },
+        confirmButton = { TextButton(onClick = { filtersVisible = false }) { Text("Готово") } },
+    )
 }

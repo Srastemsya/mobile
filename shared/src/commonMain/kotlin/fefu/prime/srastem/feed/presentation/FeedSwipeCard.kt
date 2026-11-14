@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,11 +45,18 @@ internal fun FeedSwipeCardStack(
     card: FeedCard,
     metadata: List<String>,
     modifier: Modifier = Modifier,
+    swipeEnabled: Boolean = true,
     onSwipe: (SwipeDecision) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val dragX = remember(card.ref) { Animatable(0f) }
     var settling by remember(card.ref) { mutableStateOf(false) }
+    LaunchedEffect(card.ref, swipeEnabled) {
+        if (swipeEnabled) {
+            dragX.snapTo(0f)
+            settling = false
+        }
+    }
 
     Box(modifier, contentAlignment = Alignment.Center) {
         SwipeCardBackplate(
@@ -68,16 +76,16 @@ internal fun FeedSwipeCardStack(
                     translationX = dragX.value,
                     rotationZ = dragX.value / 24f,
                 )
-                .pointerInput(card.ref) {
+                .pointerInput(card.ref, swipeEnabled) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, amount ->
-                            if (!settling) scope.launch { dragX.snapTo(dragX.value + amount) }
+                            if (swipeEnabled && !settling) scope.launch { dragX.snapTo(dragX.value + amount) }
                         },
                         onDragCancel = {
                             if (!settling) scope.launch { dragX.animateTo(0f, tween(160)) }
                         },
                         onDragEnd = {
-                            if (settling) return@detectHorizontalDragGestures
+                            if (!swipeEnabled || settling) return@detectHorizontalDragGestures
                             val decision = when {
                                 dragX.value > 80f -> SwipeDecision.LIKE
                                 dragX.value < -80f -> SwipeDecision.SKIP

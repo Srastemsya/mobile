@@ -32,6 +32,7 @@ data class RoomLobbyState(
     val voteIndex: Int = 0,
     val reviewing: Boolean = false,
     val catalogDetails: CatalogDetails? = null,
+    val winnerDetailsOpen: Boolean = false,
 ) {
     val isOwner: Boolean get() = room != null && room.ownerId == ownUserId
     val canStart: Boolean
@@ -247,13 +248,17 @@ class RoomLobbyViewModel(
         viewModelScope.launch {
             submitVote?.invoke(room.id, roundId, card.ref, decision)
                 ?.onSuccess { next ->
-                    applyRoom(next); _state.update {
-                    it.copy(
-                        voteIndex = (current.voteIndex + 1).coerceAtMost(
-                            next.candidates.size
-                        )
-                    )
-                }
+                    applyRoom(next)
+                    _state.update {
+                        it.copy(voteIndex = (current.voteIndex + 1).coerceAtMost(next.candidates.size))
+                    }
+                    if (next.phase == RoomPhase.VOTING && !next.myFinished &&
+                        next.candidates.isNotEmpty() && next.candidates.all { it.ref.id in next.myVotes }
+                    ) {
+                        completeRound?.invoke(next.id, next.roundId ?: roundId)
+                            ?.onSuccess(::applyRoom)
+                            ?.onFailure { recover(next.id, it) }
+                    }
                 }
                 ?.onFailure { recover(room.id, it) }
             _state.update { it.copy(busy = false) }
@@ -319,7 +324,8 @@ class RoomLobbyViewModel(
                     room = next,
                     voteIndex = index,
                     reviewing = if (changed) false else current.reviewing,
-                    catalogDetails = if (old?.winner == next.winner) current.catalogDetails else null
+                    catalogDetails = if (old?.winner == next.winner) current.catalogDetails else null,
+                    winnerDetailsOpen = if (old?.winner == next.winner) current.winnerDetailsOpen else false
                 )
             }
         }
@@ -328,10 +334,26 @@ class RoomLobbyViewModel(
     fun openWinner() {
         val ref = state.value.room?.winner ?: return
         if (state.value.busy) return
+        if (state.value.catalogDetails?.ref == ref) {
+            _state.update { it.copy(winnerDetailsOpen = true) }
+            return
+        }
+        loadWinner(openDetails = true)
+    }
+
+    fun preloadWinner() {
+        val current = state.value
+        val ref = current.room?.winner ?: return
+        if (current.busy || current.catalogDetails?.ref == ref) return
+        loadWinner(openDetails = false)
+    }
+
+    private fun loadWinner(openDetails: Boolean) {
+        val ref = state.value.room?.winner ?: return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             getCatalogDetails?.invoke(ref)
-                ?.onSuccess { details -> _state.update { it.copy(catalogDetails = details) } }
+                ?.onSuccess { details -> _state.update { it.copy(catalogDetails = details, winnerDetailsOpen = openDetails) } }
                 ?.onFailure { error ->
                     _state.update {
                         it.copy(
@@ -344,7 +366,7 @@ class RoomLobbyViewModel(
     }
 
     fun closeWinner() {
-        _state.update { it.copy(catalogDetails = null) }
+        _state.update { it.copy(winnerDetailsOpen = false) }
     }
 
     fun copied() {
