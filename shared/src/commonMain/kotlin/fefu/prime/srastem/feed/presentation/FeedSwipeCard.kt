@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,21 +47,17 @@ internal fun FeedSwipeCardStack(
     onSwipe: (SwipeDecision) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var dragX by remember(card.ref) { mutableFloatStateOf(0f) }
+    val dragX = remember(card.ref) { Animatable(0f) }
     var settling by remember(card.ref) { mutableStateOf(false) }
-    val arrival = remember(card.ref) { Animatable(.96f) }
-    androidx.compose.runtime.LaunchedEffect(card.ref) {
-        arrival.animateTo(1f, tween(180))
-    }
 
     Box(modifier, contentAlignment = Alignment.Center) {
         SwipeCardBackplate(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                .offset(x = (-9).dp, y = (-18).dp).graphicsLayer(rotationZ = -3f),
+                .offset(y = 12.dp).graphicsLayer(rotationZ = -3f),
         )
         SwipeCardBackplate(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                .offset(x = 8.dp, y = (-10).dp).graphicsLayer(rotationZ = 3f),
+                .offset(y = 6.dp).graphicsLayer(rotationZ = 3f),
         )
         SrVoteCard(
             title = card.title,
@@ -70,44 +65,35 @@ internal fun FeedSwipeCardStack(
             cover = { FeedCardCover(card.coverUrl, card.title, Modifier.fillMaxSize()) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 7.dp)
                 .graphicsLayer(
-                    translationX = dragX,
-                    rotationZ = dragX / 24f,
-                    scaleX = arrival.value,
-                    scaleY = arrival.value,
+                    translationX = dragX.value,
+                    rotationZ = dragX.value / 24f,
                 )
                 .pointerInput(card.ref) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, amount ->
-                            if (!settling) dragX += amount
+                            if (!settling) scope.launch { dragX.snapTo(dragX.value + amount) }
+                        },
+                        onDragCancel = {
+                            if (!settling) scope.launch { dragX.animateTo(0f, tween(160)) }
                         },
                         onDragEnd = {
                             if (settling) return@detectHorizontalDragGestures
                             val decision = when {
-                                dragX > 80f -> SwipeDecision.LIKE
-                                dragX < -80f -> SwipeDecision.SKIP
+                                dragX.value > 80f -> SwipeDecision.LIKE
+                                dragX.value < -80f -> SwipeDecision.SKIP
                                 else -> null
                             }
                             settling = true
                             scope.launch {
-                                val animation = Animatable(dragX)
                                 if (decision == null) {
-                                    animation.animateTo(0f, tween(160)) { dragX = value }
+                                    dragX.animateTo(0f, tween(160))
                                     settling = false
                                 } else {
-                                    animation.animateTo(
+                                    dragX.animateTo(
                                         if (decision == SwipeDecision.LIKE) 900f else -900f,
                                         tween(180),
-                                    ) { dragX = value }
+                                    )
                                     onSwipe(decision)
-                                }
-                            }
-                        },
-                        onDragCancel = {
-                            if (!settling) {
-                                settling = true
-                                scope.launch {
-                                    Animatable(dragX).animateTo(0f, tween(160)) { dragX = value }
-                                    settling = false
                                 }
                             }
                         },
