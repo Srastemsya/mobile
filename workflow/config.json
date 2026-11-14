@@ -1,17 +1,15 @@
 {
   "version": 1,
   "spec_dir": "docs/specs/swipe-ui",
-  "base_branch": "dev",
+  "base_branch": "new_ui",
   "role_models": {
     "pm": "gpt-6-luna",
-    "developer": "gpt-6-sol",
-    "tester": "gpt-6-luna"
+    "developer": "gpt-6-sol"
   },
   "ui_scope": "one_specified_screen",
   "max_fix_rounds": 3,
-  "max_active_specs": 2,
-  "ui_integration_branch": "codex/ui-swipe-integration",
+  "max_active_specs": 1,
   "test_commands": {},
   "create_pr": false,
-  "merge": true
+  "merge": false
 }
