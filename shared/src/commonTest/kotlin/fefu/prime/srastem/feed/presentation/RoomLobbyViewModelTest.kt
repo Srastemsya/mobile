@@ -28,12 +28,16 @@ class RoomLobbyViewModelTest {
         var voteError: Throwable? = null
         var observedSnapshot: RoomSnapshot? = null
         var freshSnapshot: RoomSnapshot? = null
+        var voteResult: RoomSnapshot? = null
+        var completeResult: RoomSnapshot? = null
+        var voteCount = 0
+        var completionCount = 0
         override suspend fun createRoom(name: String?): RoomSnapshot { createdName = name; return snapshot }
         override suspend fun createInvite(roomId: String): RoomInvite { inviteCount++; return RoomInvite("srastemsya://room-invites/join?token=abc", null) }
         override suspend fun joinRoom(token: String): RoomSnapshot { joinedToken = token; joinError?.let { throw it }; return snapshot }
         override suspend fun startRoom(roomId: String, filters: FeedFilters): RoomSnapshot { startedFilters = filters; return snapshot.copy(phase = RoomPhase.VOTING) }
-        override suspend fun submitVote(roomId: String, roundId: String, candidate: FeedRef, decision: SwipeDecision): RoomSnapshot { voteError?.let { throw it }; return snapshot }
-        override suspend fun completeRound(roomId: String, roundId: String) = snapshot
+        override suspend fun submitVote(roomId: String, roundId: String, candidate: FeedRef, decision: SwipeDecision): RoomSnapshot { voteCount++; voteError?.let { throw it }; return voteResult ?: snapshot }
+        override suspend fun completeRound(roomId: String, roundId: String): RoomSnapshot { completionCount++; return completeResult ?: snapshot }
         override suspend fun getSnapshot(roomId: String) = freshSnapshot ?: snapshot
         override fun observeRoom(roomId: String): Flow<RoomSnapshot> = flow {
             try { emit(snapshot); observedSnapshot?.let { emit(it) }; awaitCancellation() } finally { cancelCount++ }
@@ -127,6 +131,26 @@ class RoomLobbyViewModelTest {
         vm.vote(SwipeDecision.LIKE)
         assertEquals("new-round", vm.state.value.room?.roundId)
         assertEquals(mapOf("place-1" to SwipeDecision.SKIP), vm.state.value.room?.myVotes)
+        assertEquals(1, vm.state.value.voteIndex)
+    }
+
+    @Test fun lastEventVoteCompletesRoundOnceAndOpensWaitingState() = runTest {
+        val rooms = Rooms()
+        val card = FeedCard(FeedRef(FeedKind.EVENT, "event-1"), "Сапы на Тобизина", "", "", null, "", "", null)
+        rooms.snapshot = rooms.snapshot.copy(phase = RoomPhase.VOTING, roundId = "round-1", candidates = listOf(card))
+        rooms.voteResult = rooms.snapshot.copy(version = 2, myVotes = mapOf(card.ref.id to SwipeDecision.LIKE))
+        rooms.completeResult = rooms.voteResult!!.copy(version = 3, myFinished = true)
+        val vm = RoomLobbyViewModel(
+            CreateRoomUseCase(rooms), CreateInviteUseCase(rooms), JoinRoomUseCase(rooms),
+            ObserveRoomUseCase(rooms), StartRoomUseCase(rooms), { "guest" },
+            submitVote = SubmitVoteUseCase(rooms), completeRound = CompleteRoundUseCase(rooms),
+        )
+        vm.acceptInvite("srastemsya://room-invites/join?token=abc")
+        vm.vote(SwipeDecision.LIKE)
+        vm.vote(SwipeDecision.SKIP)
+        assertEquals(1, rooms.voteCount)
+        assertEquals(1, rooms.completionCount)
+        assertTrue(vm.state.value.room?.myFinished == true)
         assertEquals(1, vm.state.value.voteIndex)
     }
 

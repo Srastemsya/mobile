@@ -33,6 +33,7 @@ data class RoomLobbyState(
     val reviewing: Boolean = false,
     val catalogDetails: CatalogDetails? = null,
     val winnerDetailsOpen: Boolean = false,
+    val votingFiltersOpen: Boolean = false,
 ) {
     val isOwner: Boolean get() = room != null && room.ownerId == ownUserId
     val canStart: Boolean
@@ -176,6 +177,16 @@ class RoomLobbyViewModel(
         _state.update { it.copy(filtersOpen = false, error = null) }
     }
 
+    fun openVotingFilters() {
+        if (state.value.isOwner && state.value.room?.phase == RoomPhase.VOTING) {
+            _state.update { it.copy(votingFiltersOpen = true) }
+        }
+    }
+
+    fun closeVotingFilters() {
+        _state.update { it.copy(votingFiltersOpen = false) }
+    }
+
     fun setKind(kind: FeedKind) {
         _state.update { it.copy(kind = kind, localDate = "", categoryId = null) }
     }
@@ -248,13 +259,15 @@ class RoomLobbyViewModel(
         viewModelScope.launch {
             submitVote?.invoke(room.id, roundId, card.ref, decision)
                 ?.onSuccess { next ->
-                    applyRoom(next); _state.update {
-                    it.copy(
-                        voteIndex = (current.voteIndex + 1).coerceAtMost(
-                            next.candidates.size
-                        )
-                    )
-                }
+                    applyRoom(next)
+                    if (next.phase == RoomPhase.VOTING && !next.myFinished &&
+                        next.candidates.isNotEmpty() &&
+                        next.candidates.all { it.ref.id in next.myVotes }
+                    ) {
+                        completeRound?.invoke(next.id, roundId)
+                            ?.onSuccess(::applyRoom)
+                            ?.onFailure { recover(next.id, it) }
+                    }
                 }
                 ?.onFailure { recover(room.id, it) }
             _state.update { it.copy(busy = false) }
@@ -314,8 +327,8 @@ class RoomLobbyViewModel(
             if (old?.id == next.id && next.version < old.version) current
             else {
                 val changed = old?.roundId != next.roundId
-                val index = if (changed) next.candidates.indexOfFirst { it.ref.id !in next.myVotes }
-                    .let { if (it < 0) next.candidates.size else it } else current.voteIndex
+                val index = next.candidates.indexOfFirst { it.ref.id !in next.myVotes }
+                    .let { if (it < 0) next.candidates.size else it }
                 current.copy(
                     room = next,
                     voteIndex = index,
