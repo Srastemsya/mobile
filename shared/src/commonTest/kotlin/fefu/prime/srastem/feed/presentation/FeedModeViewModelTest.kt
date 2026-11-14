@@ -13,7 +13,9 @@ import fefu.prime.srastem.feed.domain.GetFeedCandidatesUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
@@ -213,6 +215,30 @@ class FeedModeViewModelTest {
         assertEquals(listOf(null, "cursor-next"), repository.cursors)
         assertEquals("next", viewModel.state.value.swipe.current?.ref?.id)
         assertEquals(0, viewModel.state.value.swipe.index)
+    }
+
+    @Test
+    fun skippingFinalPlaceWithoutCursorShowsRefreshBeforeExhaustion() = runTest {
+        val repository = CapturingFeedRepository()
+        repository.pages += FeedPage(
+            listOf(FeedCard(FeedRef(FeedKind.PLACE, "last"), "Last place", "", "", null, "", "", null)),
+            null,
+        )
+        val viewModel = filteringVm(repository)
+        viewModel.onEvent(FeedModeEvent.SubmitFilters)
+
+        viewModel.onEvent(FeedModeEvent.SwipeDecided(fefu.prime.srastem.feed.domain.SwipeDecision.SKIP))
+
+        assertTrue(viewModel.state.value.swipe.loadingNextPool)
+        assertFalse(viewModel.state.value.feedExhausted)
+        assertNull(viewModel.state.value.swipe.current)
+        assertEquals(listOf<String?>(null), repository.cursors)
+
+        advanceTimeBy(350)
+        runCurrent()
+
+        assertFalse(viewModel.state.value.swipe.loadingNextPool)
+        assertTrue(viewModel.state.value.feedExhausted)
     }
 
     @Test

@@ -4,7 +4,7 @@
 
 - Branch: `codex/ui-04-solo-place`; base revision: `96fc48e53aeb434f7b9b3ca3405a50c93b3c6674`.
 - APK: `androidApp/build/outputs/apk/debug/androidApp-debug.apk`.
-- APK SHA-256: `8251dbf844dd9e89f9baa72d35b0e44b21ab7862f522f489fdcd133c30fbdd0a`.
+- APK SHA-256: `f0c81b9deb2566771d9607c647e6fc929a367ebdcc3703eb5abdf5a899f444ae`.
 
 ## Public docs and interfaces
 
