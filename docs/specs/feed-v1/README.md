@@ -2,7 +2,7 @@
 
 Очередь спецификаций мобильного приложения (Android/iOS, KMP) для вкладки «Лента». Только клиентская работа: серверная часть описывается отдельной спецификацией бэкенда ([BE-D03](../discovery-v1/implementation.md#be-d03--свайпы-на-одном-и-нескольких-устройствах)) и в этот объём не входит. Граница между клиентом и сервером — [HTTP-контракт](../../contracts/discovery-v1.md); все обращения к серверу в пакетах ниже означают вызовы этого контракта, а не задачи на его реализацию. Основана на актуальной секции Figma [«Лента · выбор мест и событий»](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-10678) и [UI Kit · Liquid Glass](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-8378).
 
-[HTTP-контракт](../../contracts/discovery-v1.md#свайпы-на-одном-устройстве) · [Описание дизайна](../../design/feed.md) · [Приёмка](acceptance.md) · [Правила](../../../workflow/rules/index.md)
+[HTTP-контракт](../../contracts/discovery-v1.md#свайпы-на-одном-устройстве) · [Описание дизайна](../../design/feed.md) · [Новый поэкранный UI-прогон](../swipe-ui/README.md) · [Приёмка](acceptance.md) · [Правила](../../../workflow/rules/index.md)
 
 ## Очередь пакетов
 
