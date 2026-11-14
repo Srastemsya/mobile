@@ -30,6 +30,7 @@ data class FeedModeState(
     val feedExhausted: Boolean = false,
     val swipe: FeedSwipeState = FeedSwipeState(),
     val chosen: FeedCard? = null,
+    val selectedDetailsOpen: Boolean = false,
     val catalogDetails: CatalogDetails? = null,
     val loadingDetails: Boolean = false,
     val detailsError: String? = null,

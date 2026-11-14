@@ -80,9 +80,17 @@ class FeedModeViewModel(
                 )
             }
 
-            FeedModeEvent.OpenCatalogDetails, FeedModeEvent.RetryCatalogDetails -> loadCatalogDetails()
+            FeedModeEvent.OpenCatalogDetails -> {
+                _state.update { it.copy(selectedDetailsOpen = true) }
+                if (_state.value.chosen?.ref?.kind == FeedKind.PLACE) loadCatalogDetails()
+            }
+            FeedModeEvent.RetryCatalogDetails -> loadCatalogDetails()
+            FeedModeEvent.CloseSelection -> _state.update {
+                it.copy(chosen = null, selectedDetailsOpen = false, catalogDetails = null, detailsError = null)
+            }
             FeedModeEvent.CloseCatalogDetails -> _state.update {
                 it.copy(
+                    selectedDetailsOpen = false,
                     catalogDetails = null,
                     detailsError = null
                 )
@@ -239,7 +247,7 @@ class FeedModeViewModel(
                     if (page.items.isEmpty()) state.copy(
                         swipe = FeedSwipeState(nextCursor = page.nextCursor),
                         feedError = null,
-                        feedExhausted = page.nextCursor == null
+                        feedExhausted = true
                     )
                     else state.copy(
                         swipe = FeedSwipeState.fromCandidates(

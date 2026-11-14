@@ -93,6 +93,7 @@ internal fun FeedSwipeCardStack(
                     )
                 },
             size = SrVoteCardSize.Full,
+            description = card.description.takeIf(String::isNotBlank),
         )
     }
 }

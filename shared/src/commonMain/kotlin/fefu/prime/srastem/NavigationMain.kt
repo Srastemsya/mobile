@@ -179,12 +179,13 @@ private fun MainNavigation(
     LaunchedEffect(
         currentDestination,
         feedState.chosen?.ref,
+        feedState.selectedDetailsOpen,
         roomState.room?.phase,
         roomState.room?.winner,
         feedState.stub?.title,
     ) {
         val selectedEvent = when {
-            currentDestination == Destination.FeedScreen && feedState.chosen?.ref?.kind ==
+            currentDestination == Destination.FeedScreen && feedState.selectedDetailsOpen && feedState.chosen?.ref?.kind ==
                 fefu.prime.srastem.feed.domain.FeedKind.EVENT -> feedState.chosen?.ref
 
             currentDestination == Destination.FeedScreen &&
