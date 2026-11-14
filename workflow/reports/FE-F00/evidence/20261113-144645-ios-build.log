@@ -1,0 +1,11 @@
+# FE-F00 iOS build — 2026-11-13 14:46:45 +10
+## gradle klib targets
+BUILD SUCCESSFUL in 1s
+31 actionable tasks: 6 executed, 25 up-to-date
+Configuration cache entry stored.
+## xcodebuild iosApp (simulator)
+
+** BUILD SUCCEEDED **
+
+xcode-exit=0
+# finished 2026-11-13 14:46:48 +10

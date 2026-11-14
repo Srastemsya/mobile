@@ -1,0 +1,11 @@
+# FE-F00 Android build — 2026-11-13 14:46:35 +10
+> Task :androidApp:createDebugApkListingFileRedirect UP-TO-DATE
+
+BUILD SUCCESSFUL in 566ms
+81 actionable tasks: 2 executed, 79 up-to-date
+Configuration cache entry reused.
+gradle-exit=0
+drwxr-xr-x@ 3 maksimbezrodnyh  staff        96 13 нояб. 14:44 ..
+-rw-r--r--@ 1 maksimbezrodnyh  staff  59792156 13 нояб. 14:44 androidApp-debug.apk
+-rw-r--r--@ 1 maksimbezrodnyh  staff       407 13 нояб. 14:44 output-metadata.json
+# finished 2026-11-13 14:46:35 +10

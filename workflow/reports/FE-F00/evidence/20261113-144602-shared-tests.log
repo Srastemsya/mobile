@@ -1,0 +1,195 @@
+# FE-F00 unit tests (shared commonTest) — 2026-11-13 14:46:02 +10
+Reusing configuration cache.
+> Task :shared:convertXmlValueResourcesForIosMain NO-SOURCE
+> Task :uikit:kmpPartiallyResolvedDependenciesChecker
+> Task :shared:copyNonXmlValueResourcesForNativeMain NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForAppleMain NO-SOURCE
+> Task :uikit:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :uikit:convertXmlValueResourcesForAppleMain NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForIosMain NO-SOURCE
+> Task :shared:kmpPartiallyResolvedDependenciesChecker
+> Task :shared:convertXmlValueResourcesForIosSimulatorArm64Main NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForIosSimulatorArm64Main NO-SOURCE
+> Task :uikit:checkIosSimulatorArm64MainComposeLibrariesCompatibility
+> Task :shared:prepareComposeResourcesTaskForIosMain NO-SOURCE
+> Task :shared:convertXmlValueResourcesForNativeMain NO-SOURCE
+> Task :shared:convertXmlValueResourcesForAppleMain NO-SOURCE
+> Task :shared:checkIosSimulatorArm64MainComposeLibrariesCompatibility
+> Task :shared:prepareComposeResourcesTaskForIosSimulatorArm64Main NO-SOURCE
+> Task :uikit:copyNonXmlValueResourcesForAppleMain NO-SOURCE
+> Task :shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :uikit:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForAppleMain NO-SOURCE
+> Task :shared:generateResourceAccessorsForIosMain NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForNativeMain NO-SOURCE
+> Task :shared:generateResourceAccessorsForIosSimulatorArm64Main NO-SOURCE
+> Task :uikit:prepareComposeResourcesTaskForAppleMain NO-SOURCE
+> Task :uikit:convertXmlValueResourcesForIosMain NO-SOURCE
+> Task :uikit:convertXmlValueResourcesForIosSimulatorArm64Main NO-SOURCE
+> Task :uikit:convertXmlValueResourcesForNativeMain NO-SOURCE
+> Task :uikit:generateResourceAccessorsForAppleMain NO-SOURCE
+> Task :uikit:copyNonXmlValueResourcesForNativeMain NO-SOURCE
+> Task :uikit:copyNonXmlValueResourcesForIosSimulatorArm64Main NO-SOURCE
+> Task :shared:generateResourceAccessorsForNativeMain NO-SOURCE
+> Task :shared:generateResourceAccessorsForAppleMain NO-SOURCE
+> Task :uikit:prepareComposeResourcesTaskForNativeMain NO-SOURCE
+> Task :uikit:prepareComposeResourcesTaskForIosSimulatorArm64Main NO-SOURCE
+> Task :uikit:generateResourceAccessorsForNativeMain NO-SOURCE
+> Task :shared:checkIosSimulatorArm64TestComposeLibrariesCompatibility
+> Task :uikit:generateResourceAccessorsForIosSimulatorArm64Main NO-SOURCE
+> Task :uikit:exportCrossCompilationMetadataForIosSimulatorArm64ApiElements
+> Task :shared:convertXmlValueResourcesForCommonTest NO-SOURCE
+> Task :shared:generateExpectResourceCollectorsForCommonMain
+> Task :shared:copyNonXmlValueResourcesForCommonTest NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForAppleTest NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForCommonTest NO-SOURCE
+> Task :shared:validateLocalSwiftPMDependencies
+> Task :uikit:generateExpectResourceCollectorsForCommonMain
+> Task :shared:generateResourceAccessorsForCommonTest NO-SOURCE
+> Task :shared:convertXmlValueResourcesForIosSimulatorArm64Test NO-SOURCE
+> Task :shared:convertXmlValueResourcesForIosTest NO-SOURCE
+> Task :shared:convertXmlValueResourcesForAppleTest NO-SOURCE
+> Task :shared:convertXmlValueResourcesForNativeTest NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForIosTest NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForIosSimulatorArm64Test NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForNativeTest NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForAppleTest NO-SOURCE
+> Task :shared:generateResourceAccessorsForAppleTest NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForIosSimulatorArm64Test NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForIosTest NO-SOURCE
+> Task :uikit:downloadKotlinNativeDistribution
+> Task :shared:prepareComposeResourcesTaskForNativeTest NO-SOURCE
+> Task :shared:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :shared:downloadKotlinNativeDistribution
+> Task :shared:generateResourceAccessorsForIosSimulatorArm64Test NO-SOURCE
+> Task :shared:computeLocalPackageDependencyInputFiles
+> Task :shared:androidPreBuild UP-TO-DATE
+> Task :shared:preAndroidMainBuild UP-TO-DATE
+> Task :uikit:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :uikit:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :shared:generateResourceAccessorsForIosTest NO-SOURCE
+> Task :uikit:copyNonXmlValueResourcesForCommonMain
+> Task :shared:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :uikit:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :shared:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :uikit:androidPreBuild UP-TO-DATE
+> Task :uikit:generateResourceAccessorsForAndroidMain NO-SOURCE
+> Task :shared:generateResourceAccessorsForNativeTest NO-SOURCE
+> Task :uikit:preAndroidMainBuild UP-TO-DATE
+> Task :shared:generateAndroidHostTestAssets UP-TO-DATE
+> Task :shared:preAndroidHostTestBuild UP-TO-DATE
+> Task :shared:generateAndroidMainAssets UP-TO-DATE
+> Task :uikit:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :uikit:prepareComposeResourcesTaskForCommonMain
+> Task :shared:serializeSwiftPMDependenciesMetadataForLockFiles
+> Task :uikit:generateAndroidMainAssets UP-TO-DATE
+> Task :shared:assembleIosSimulatorArm64TestResources
+> Task :shared:generateAndroidMainEmptyResourceFiles
+> Task :uikit:generateComposeResClass
+> Task :shared:generateComposeResClass
+> Task :uikit:generateAndroidMainEmptyResourceFiles
+> Task :shared:androidJar
+> Task :shared:generateUmbrellaPackageIdentifierBasedResolutionForDefault SKIPPED
+> Task :shared:fetchUmbrellaPackageIdentifierForDefault SKIPPED
+> Task :shared:convertXmlValueResourcesForAndroidHostTest NO-SOURCE
+> Task :shared:copyNonXmlValueResourcesForAndroidHostTest NO-SOURCE
+> Task :shared:generateAndroidHostTestResources
+> Task :shared:prepareComposeResourcesTaskForAndroidHostTest NO-SOURCE
+> Task :shared:processAndroidHostTestJavaRes NO-SOURCE
+> Task :shared:generateResourceAccessorsForAndroidHostTest NO-SOURCE
+> Task :shared:mapAndroidHostTestSourceSetPaths
+> Task :shared:mapAndroidMainSourceSetPaths
+> Task :uikit:mapAndroidMainSourceSetPaths
+> Task :uikit:copyAndroidMainComposeResourcesToAndroidAssets
+> Task :uikit:writeAndroidMainAarMetadata
+> Task :shared:writeAndroidMainAarMetadata
+> Task :uikit:generateResourceAccessorsForCommonMain
+> Task :shared:copyNonXmlValueResourcesForCommonMain
+> Task :shared:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :shared:prepareComposeResourcesTaskForCommonMain
+> Task :uikit:generateActualResourceCollectorsForAndroidMain
+> Task :shared:generateResourceAccessorsForCommonMain
+> Task :uikit:copyNonXmlValueResourcesForIosMain
+> Task :uikit:prepareComposeResourcesTaskForIosMain
+> Task :shared:generateActualResourceCollectorsForAndroidMain
+> Task :shared:generateActualResourceCollectorsForIosSimulatorArm64Main
+> Task :shared:checkAndroidHostTestAarMetadata
+> Task :shared:fingerprintSyntheticPackage
+> Task :shared:generateSyntheticLinkageSwiftPMImportProjectForCinteropsAndLdDump SKIPPED
+> Task :shared:syncPersistedPackageResolvedToSynthetic SKIPPED
+> Task :shared:fetchSyntheticImportProjectPackages SKIPPED
+> Task :shared:assembleIosSimulatorArm64MainResources
+> Task :shared:copyAndroidMainComposeResourcesToAndroidAssets
+> Task :uikit:generateResourceAccessorsForIosMain
+> Task :shared:fingerprintXcodebuildIphonesimulator
+> Task :shared:dumpXcodebuildArgsIphonesimulator SKIPPED
+> Task :uikit:generateActualResourceCollectorsForIosSimulatorArm64Main
+> Task :uikit:mergeAndroidMainAssets
+> Task :shared:packageAndroidMainResources
+> Task :shared:convertSyntheticImportProjectIntoDefFileIphonesimulator
+> Task :uikit:assembleIosSimulatorArm64MainResources
+> Task :shared:iosSimulatorArm64ResolveSelfResourcesCopyHierarchicalMultiplatformResources
+> Task :shared:mergeAndroidMainAssets
+> Task :uikit:processAndroidMainManifest
+> Task :shared:processAndroidMainManifest
+> Task :uikit:iosSimulatorArm64CopyHierarchicalMultiplatformResources
+> Task :uikit:packageAndroidMainResources
+> Task :shared:compileAndroidMainLibraryResources
+> Task :uikit:parseAndroidMainLocalResources
+> Task :shared:parseAndroidMainLocalResources
+> Task :shared:mergeAndroidHostTestAssets
+> Task :shared:generateAndroidMainRFile
+> Task :uikit:generateAndroidMainRFile
+> Task :uikit:compileAndroidMainLibraryResources
+> Task :shared:processAndroidHostTestManifest
+> Task :uikit:iosSimulatorArm64ZipMultiplatformResourcesForPublication
+> Task :shared:iosSimulatorArm64ResolveResourcesFromDependencies
+> Task :shared:iosSimulatorArm64AggregateResources
+> Task :shared:copyTestComposeResourcesForIosSimulatorArm64
+> Task :shared:iosSimulatorArm64ProcessResources
+> Task :shared:mergeAndroidHostTestResources
+> Task :shared:processAndroidHostTestResources
+> Task :shared:packageAndroidHostTestForUnitTest
+> Task :shared:generateAndroidHostTestConfig
+
+> Task :uikit:compileKotlinIosSimulatorArm64
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/uikit/src/commonMain/kotlin/ru/srastemsya/uikit/Catalog.kt:26:98 Expression is unused.
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/uikit/src/commonMain/kotlin/ru/srastemsya/uikit/Glass.kt:17:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/uikit/src/iosMain/kotlin/ru/srastemsya/uikit/Glass.ios.kt:19:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+
+> Task :uikit:compileAndroidMain
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/uikit/src/androidMain/kotlin/ru/srastemsya/uikit/Glass.android.kt:24:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/uikit/src/commonMain/kotlin/ru/srastemsya/uikit/Catalog.kt:26:98 Expression is unused.
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/uikit/src/commonMain/kotlin/ru/srastemsya/uikit/Glass.kt:17:1 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573
+
+> Task :shared:compileKotlinIosSimulatorArm64
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/shared/src/commonMain/kotlin/fefu/prime/srastem/party/presentation/PartyScreen.kt:162:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/shared/src/iosMain/kotlin/fefu/prime/srastem/platform/media/PlatformImagePicker.ios.kt:65:20 Unchecked cast of '() -> Unit?' to '() -> Unit'.
+
+> Task :uikit:processAndroidMainJavaRes
+> Task :uikit:bundleAndroidMainClassesToRuntimeJar
+> Task :uikit:bundleAndroidMainClassesToCompileJar
+> Task :shared:iosSimulatorArm64MainKlibrary
+> Task :shared:compileTestKotlinIosSimulatorArm64
+
+> Task :shared:linkDebugTestIosSimulatorArm64
+
+> Task :shared:compileAndroidMain
+w: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/shared/src/commonMain/kotlin/fefu/prime/srastem/party/presentation/PartyScreen.kt:162:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+
+> Task :shared:processAndroidMainJavaRes
+> Task :shared:bundleAndroidMainClassesToRuntimeJar
+> Task :shared:bundleAndroidMainClassesToCompileJar
+> Task :shared:compileAndroidHostTest
+> Task :shared:testAndroidHostTest
+> Task :shared:iosSimulatorArm64Test
+> Task :shared:allTests
+
+[Incubating] Problems report is available at: file:///Users/maksimbezrodnyh/AndroidStudioProjects/srastem/.worktrees/fe-f00/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 17s
+88 actionable tasks: 88 executed
+Configuration cache entry reused.
+exit=0
+# finished 2026-11-13 14:46:19 +10
