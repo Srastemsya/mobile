@@ -53,9 +53,9 @@ class RoomLobbyViewModel(
     val state: StateFlow<RoomLobbyState> = _state.asStateFlow()
     private var observation: Job? = null
 
-    fun openCreate() {
+    fun openCreate(initialKind: FeedKind = FeedKind.PLACE) {
         observation?.cancel(); activeRoomStore?.clear(); _state.value =
-            RoomLobbyState(ownUserId = ownUserId())
+            RoomLobbyState(ownUserId = ownUserId(), kind = initialKind)
     }
 
     /** Re-enter through a fresh server snapshot after process restart. */
