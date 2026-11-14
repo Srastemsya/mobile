@@ -61,6 +61,7 @@ fun HomeScreen(
         modifier.fillMaxSize()
             .background(SrColors.Base)
             .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(top = 20.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -75,7 +76,7 @@ fun HomeScreen(
             onOpenEvents = onOpenEvents,
             onOpenMap = onOpenMap,
         )
-        Spacer(Modifier.height(96.dp))
+        Spacer(Modifier.height(180.dp))
     }
 }
 

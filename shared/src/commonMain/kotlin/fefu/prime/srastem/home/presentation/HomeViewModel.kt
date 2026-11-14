@@ -20,10 +20,6 @@ class HomeViewModel(private val getHome: GetHome) : ViewModel() {
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
-    init {
-        refresh()
-    }
-
     fun refresh() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
