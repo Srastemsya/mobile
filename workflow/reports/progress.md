@@ -39,4 +39,9 @@
 | Экран | Зависимость | Статус | Ветка / worktree | Отчёт |
 |---|---|---|---|---|
 | 01 Открытия | — | INTEGRATED; final TESTING | `codex/ui-01-discovery` → `codex/ui-swipe-integration` | Пользователь подтвердил, что первая страница выглядит нормально; прежний staging-блокер и отчёты сохранены. Общий финальный прогон ещё нужен. |
-| 02–17 | Порядок из `docs/specs/swipe-ui/README.md` | TODO | отдельная ветка на экран | Один PM, до двух Developer параллельно; затем интеграция и поэкранная проверка Tester. |
+| 02–03 | 02 → 03; затем отдельные свайп-экраны 04/05 | READY_FOR_INTEGRATION | `codex/ui-02-device-choice` / `/private/tmp/mobile-ui-02` | Commit `dabe2764ba3cc0938388f576195196bda5feb102`; build/host tests pass. Runtime and AC evidence blocked at sign-in (no authenticated fixture). |
+| 04–05 | После 02–03 | TODO | отдельная ветка/worktree на экран | Swipe screens remain individual assignments, build and independent integrated gesture check. |
+| 06–09 | После соответствующих экранов выбора и свайпа | TODO | grouped simple-state batch | Acceptance and exact dependency commits to be prepared at assignment. |
+| 10–13 | 10 → 11 → 12 → 13; then separate swipe screens 14/15 | READY_FOR_INTEGRATION (13 target BLOCKED) | `codex/ui-10-room-create` / `/private/tmp/mobile-ui-10` | Commit `dd6014ed62d107caf2f10c7de61d7efb6d776d8f`; build/host tests pass. Runtime blocked at sign-in; 13 participant submit/wait/aggregation lacks target design and server contract. |
+| 14–15 | После 10–13 | TODO | отдельная ветка/worktree на экран | Swipe screens remain individual assignments, build and independent integrated gesture check. |
+| 16–17 | После 14/15 | TODO | grouped simple-state batch | Acceptance and exact dependency commits to be prepared at assignment. |
