@@ -1,10 +1,17 @@
 {
   "version": 1,
-  "spec_dir": "workflow/specs/feed-v1",
+  "spec_dir": "docs/specs/swipe-ui",
   "base_branch": "dev",
+  "role_models": {
+    "pm": "gpt-6-luna",
+    "developer": "gpt-6-sol",
+    "tester": "gpt-6-luna"
+  },
+  "ui_scope": "one_specified_screen",
   "max_fix_rounds": 3,
-  "max_active_specs": 1,
+  "max_active_specs": 2,
+  "ui_integration_branch": "codex/ui-swipe-integration",
   "test_commands": {},
-  "create_pr": true,
-  "merge": false
+  "create_pr": false,
+  "merge": true
 }
