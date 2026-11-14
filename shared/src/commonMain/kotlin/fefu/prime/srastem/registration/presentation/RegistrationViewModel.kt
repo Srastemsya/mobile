@@ -27,7 +27,7 @@ data class RegistrationUiState(
     val step: RegistrationStep = RegistrationStep.METHOD,
     val method: RegistrationMethod? = null,
     val contact: String = "",
-    val code: String = "0427",
+    val code: String = "",
     val name: String = "",
     val birthDate: String = "",
     val error: String? = null,
@@ -98,23 +98,25 @@ class RegistrationViewModel(
             _uiState.value = state.copy(isBusy = true, error = null)
             try {
                 requestRegistrationCode(contact, method)
+                val autoVerify = method == RegistrationMethod.EMAIL && JudgeDemoAccounts.contains(contact)
                 _uiState.value = _uiState.value.copy(
                     step = RegistrationStep.CODE,
-                    isBusy = false,
-                    code = "",
+                    isBusy = autoVerify,
+                    code = if (autoVerify) JudgeDemoAccounts.otp else "",
                     resendSecondsRemaining = RESEND_DELAY_SECONDS,
                 )
                 startResendTimer()
+                if (autoVerify) verifyCode(contact, method, JudgeDemoAccounts.otp)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 val message = when {
                     method == RegistrationMethod.PHONE && error is BackendException &&
                             error.status == 422 && error.code == "VALIDATION_ERROR" ->
-                        "В тестовом backend SMS для этого номера не настроены. Выберите Email: person1@example.test или person2@example.test, код 0427."
+                        "В тестовом backend SMS не настроены. Для демо выберите быстрый вход по аккаунту жюри."
                     method == RegistrationMethod.EMAIL && error is BackendException &&
                             error.status == 422 && error.code == "VALIDATION_ERROR" ->
-                        "Для теста используйте person1@example.test или person2@example.test. Код: 0427."
+                        "Демо-аккаунты доступны только на тестовом backend. Проверьте подключение к стенду."
                     else -> error.message ?: "Не удалось отправить код"
                 }
                 _uiState.value = _uiState.value.copy(isBusy = false, error = message, errorField = RegistrationField.CONTACT)
@@ -154,20 +156,33 @@ class RegistrationViewModel(
         }
         viewModelScope.launch {
             _uiState.value = state.copy(isBusy = true, error = null)
-            try {
-                val valid = verifyRegistrationCode(state.contact.trim(), method, state.code)
-                val alreadyComplete = valid && getRegistrationCompleted()
-                _uiState.value = _uiState.value.copy(
+            verifyCode(state.contact.trim(), method, state.code)
+        }
+    }
+
+    private suspend fun verifyCode(contact: String, method: RegistrationMethod, code: String) {
+        try {
+            val valid = verifyRegistrationCode(contact, method, code)
+            val alreadyComplete = valid && getRegistrationCompleted()
+            _uiState.update {
+                it.copy(
                     isBusy = false,
                     isVisible = !alreadyComplete,
                     step = if (valid && !alreadyComplete) RegistrationStep.PROFILE else RegistrationStep.CODE,
                     error = if (valid) null else "Код неверен или срок его действия истёк",
                     errorField = if (valid) null else RegistrationField.CODE,
                 )
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                _uiState.value = _uiState.value.copy(isBusy = false, error = error.message ?: "Не удалось проверить код", errorField = RegistrationField.CODE)
+            }
+            if (valid) resendTimer?.cancel()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            _uiState.update {
+                it.copy(
+                    isBusy = false,
+                    error = error.message ?: "Не удалось проверить код",
+                    errorField = RegistrationField.CODE,
+                )
             }
         }
     }

@@ -4,7 +4,7 @@
 
 ## Локальный запуск
 
-Из каталога backend-dev запустите Compose из приложенного README. API доступен на `127.0.0.1:8080`; Android Emulator обращается к хосту по `10.0.2.2:8080`, iOS Simulator — по `127.0.0.1:8080`. На физическом Android подключите телефон по USB и выполните `adb reverse tcp:8080 tcp:8080`; приложение на устройстве использует `127.0.0.1:8080`. Для входа используйте `person1@example.test` или `person2@example.test`, код dev OTP — `0427`; для нового профиля — `new@example.test`. Dev backend ограничивает SMS тестовым номером `+15550100100`, поэтому для российского номера challenge вернёт `VALIDATION_ERROR`. Перед запуском Android-приложения backend должен быть healthy.
+Из каталога backend-dev запустите Compose из приложенного README. API доступен на `127.0.0.1:8080`; Android Emulator обращается к хосту по `10.0.2.2:8080`, iOS Simulator — по `127.0.0.1:8080`. На физическом Android подключите телефон по USB и выполните `adb reverse tcp:8080 tcp:8080`; приложение на устройстве использует `127.0.0.1:8080`. Для быстрого входа жюри выберите один из `person1@example.test` … `person5@example.test`: Android сам запросит challenge, введёт OTP и подтвердит вход. Для ручного сценария нового профиля доступен `new@example.test`. Dev backend ограничивает SMS тестовым номером `+15550100100`, поэтому для российского номера challenge вернёт `VALIDATION_ERROR`. Перед запуском Android-приложения backend должен быть healthy.
 
 ## Подключённые сценарии
 

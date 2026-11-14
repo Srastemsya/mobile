@@ -31,6 +31,7 @@ import ru.srastemsya.uikit.SrDate
 import ru.srastemsya.uikit.SrDateField
 import ru.srastemsya.uikit.SrField
 import ru.srastemsya.uikit.SrFieldKind
+import ru.srastemsya.uikit.SrSelect
 import ru.srastemsya.uikit.SrType
 
 @Composable
@@ -70,24 +71,43 @@ fun RegistrationScreen(
             when (state.step) {
                 RegistrationStep.METHOD -> SrCard(Modifier.fillMaxWidth()) {
                     Text("Срастёмся", style = SrType.Display, color = SrColors.Text)
-                    Text("Выберите способ входа", style = SrType.Body, color = SrColors.Muted)
-                    SrButton("Номер телефона", onPhoneSelected, Modifier.fillMaxWidth())
-                    SrButton("Электронная почта", onEmailSelected, Modifier.fillMaxWidth(), style = SrButtonStyle.Secondary)
+                    Text("Для жюри доступен быстрый вход по демо-аккаунту.", style = SrType.Body, color = SrColors.Muted)
+                    SrButton("Быстрый вход для жюри", onEmailSelected, Modifier.fillMaxWidth())
+                    SrButton("Войти по номеру телефона", onPhoneSelected, Modifier.fillMaxWidth(), style = SrButtonStyle.Secondary)
                 }
 
                 RegistrationStep.CONTACT -> SrCard(Modifier.fillMaxWidth()) {
                     Text(if (state.method == RegistrationMethod.PHONE) "Вход по телефону" else "Вход по почте", style = SrType.Heading, color = SrColors.Text)
-                    Text("Введите контакт, чтобы получить одноразовый код", style = SrType.Body, color = SrColors.Muted)
-                    SrField(
-                        value = state.contact,
-                        onValueChange = onContactChanged,
-                        label = if (state.method == RegistrationMethod.PHONE) "Номер телефона" else "Электронная почта",
-                        placeholder = if (state.method == RegistrationMethod.PHONE) "+7 (___) ___-__-__" else "name@example.com",
-                        kind = if (state.method == RegistrationMethod.PHONE) SrFieldKind.Phone else SrFieldKind.Text,
-                        errorMessage = state.error.takeIf { state.errorField == RegistrationField.CONTACT },
-                        enabled = !state.isBusy,
+                    if (state.method == RegistrationMethod.EMAIL) {
+                        Text("Выберите аккаунт. Код подтверждения введётся и проверится автоматически.", style = SrType.Body, color = SrColors.Muted)
+                        SrSelect(
+                            value = state.contact.takeIf(String::isNotBlank),
+                            options = JudgeDemoAccounts.emails,
+                            onSelect = onContactChanged,
+                            label = "Демо-аккаунт",
+                            placeholder = "Выберите аккаунт жюри",
+                            enabled = !state.isBusy,
+                            errorMessage = state.error.takeIf { state.errorField == RegistrationField.CONTACT },
+                        )
+                    } else {
+                        Text("Введите номер телефона, чтобы получить одноразовый код", style = SrType.Body, color = SrColors.Muted)
+                        SrField(
+                            value = state.contact,
+                            onValueChange = onContactChanged,
+                            label = "Номер телефона",
+                            placeholder = "+7 (___) ___-__-__",
+                            kind = SrFieldKind.Phone,
+                            errorMessage = state.error.takeIf { state.errorField == RegistrationField.CONTACT },
+                            enabled = !state.isBusy,
+                        )
+                    }
+                    SrButton(
+                        if (state.method == RegistrationMethod.EMAIL) "Войти" else "Получить код",
+                        onRequestCode,
+                        Modifier.fillMaxWidth(),
+                        enabled = !state.isBusy && (state.method != RegistrationMethod.EMAIL || state.contact.isNotBlank()),
+                        loading = state.isBusy,
                     )
-                    SrButton("Получить код", onRequestCode, Modifier.fillMaxWidth(), enabled = !state.isBusy, loading = state.isBusy)
                 }
 
                 RegistrationStep.CODE -> SrCard(Modifier.fillMaxWidth()) {
