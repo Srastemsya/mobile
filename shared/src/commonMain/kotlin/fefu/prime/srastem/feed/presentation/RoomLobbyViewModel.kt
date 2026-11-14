@@ -24,6 +24,8 @@ data class RoomLobbyState(
     val joined: Boolean = false,
     val filtersOpen: Boolean = false,
     val kind: FeedKind = FeedKind.PLACE,
+    val categories: List<FeedCategory> = emptyList(),
+    val categoryId: String? = null,
     val budget: String = "",
     val localDate: String = "",
     val started: Boolean = false,
@@ -48,6 +50,7 @@ class RoomLobbyViewModel(
     private val getSnapshot: (suspend (String) -> RoomSnapshot)? = null,
     private val getCatalogDetails: GetCatalogDetailsUseCase? = null,
     private val activeRoomStore: ActiveRoomStore? = null,
+    private val getCategories: GetFeedCategoriesUseCase? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RoomLobbyState())
     val state: StateFlow<RoomLobbyState> = _state.asStateFlow()
@@ -157,7 +160,15 @@ class RoomLobbyViewModel(
     }
 
     fun openFilters() {
-        if (state.value.canStart) _state.update { it.copy(filtersOpen = true, error = null) }
+        if (!state.value.canStart) return
+        _state.update { it.copy(filtersOpen = true, error = null) }
+        viewModelScope.launch {
+            getCategories?.invoke()?.onSuccess { categories ->
+                _state.update { it.copy(categories = categories) }
+            }?.onFailure { error ->
+                _state.update { it.copy(error = error.message ?: "Не удалось загрузить категории") }
+            }
+        }
     }
 
     fun closeFilters() {
@@ -165,7 +176,11 @@ class RoomLobbyViewModel(
     }
 
     fun setKind(kind: FeedKind) {
-        _state.update { it.copy(kind = kind, localDate = "") }
+        _state.update { it.copy(kind = kind, localDate = "", categoryId = null) }
+    }
+
+    fun setCategory(id: String?) {
+        _state.update { it.copy(categoryId = id) }
     }
 
     fun setBudget(value: String) {
@@ -192,6 +207,7 @@ class RoomLobbyViewModel(
         }
         val filters = FeedFilters(
             current.kind,
+            categoryId = current.categoryId,
             localDate = current.localDate.trim()
                 .takeIf { current.kind == FeedKind.EVENT && it.isNotEmpty() },
             budgetTotalMinor = budget?.times(100),
