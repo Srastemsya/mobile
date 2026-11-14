@@ -238,10 +238,9 @@ private fun MainNavigation(
                     },
                 )
             }
-            // AC-03: таббар виден только на экране выбора режима ленты; последующие шаги
-            // (FE-F01 filters/results, FE-F04 stub, room steps) open over it without the tab bar.
+            // The swipe flow starts at device choice; its full-screen steps have no tab bar.
             val showBottomNavigation = currentDestination != Destination.MapScreen &&
-                    (currentDestination != Destination.FeedScreen || (feedState.stub == null && !feedState.filterOpen && feedState.cards.isEmpty() && feedState.feedError == null)) &&
+                    currentDestination != Destination.FeedScreen &&
                     (currentDestination != Destination.Profile || profileState.page == ProfilePage.HOME) &&
                     (currentDestination != Destination.EventsScreen || eventState.page == EventPage.LIST) &&
                     (currentDestination != Destination.RoomScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE)

@@ -54,8 +54,7 @@ import androidx.compose.ui.platform.LocalConfiguration
  * Фон — градиент Главной из токенов UI Kit (`SrColors.Base/Tint/GlassIris`), карточки режимов —
  * стекло UI Kit (`SrColors.Glass` + `SrColors.GlassEdge` + `SrShapes.Card`); платформы без
  * поддержки эффекта получают подложку `color/surface/solid` через уведомления-панели.
- * Последующие шаги сценария ([FeedModeState.stub]) открываются поверх без таббара,
- * с кнопкой «Назад» в `SrTopBar`.
+ * Экран выбора и последующие шаги сценария открываются без таббара.
  */
 @Composable
 fun FeedModeScreen(
