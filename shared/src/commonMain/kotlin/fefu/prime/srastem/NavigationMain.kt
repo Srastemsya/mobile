@@ -187,12 +187,6 @@ private fun MainNavigation(
             currentDestination == Destination.FeedScreen && feedState.chosen?.ref?.kind ==
                 fefu.prime.srastem.feed.domain.FeedKind.EVENT -> feedState.chosen?.ref
 
-            currentDestination == Destination.FeedScreen &&
-                feedState.stub?.title?.startsWith("FE-F04") == true &&
-                roomState.room?.phase == fefu.prime.srastem.feed.domain.RoomPhase.MATCHED &&
-                roomState.room!!.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT ->
-                roomState.room!!.winner
-
             else -> null
         }
         selectedEvent?.let { ref ->
@@ -316,6 +310,10 @@ private fun DestinationContent(
                 roomLobbyViewModel,
                 onBack = { feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) },
                 onGoHome = onGoHome,
+                onOpenEvent = { id ->
+                    eventViewModel.openEvent(id, returnHomeAfterSelection = true)
+                    onNavigate(Destination.EventsScreen)
+                },
                 modifier = modifier
             )
             return

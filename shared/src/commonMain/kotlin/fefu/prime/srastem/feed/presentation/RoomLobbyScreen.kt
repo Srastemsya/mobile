@@ -23,22 +23,46 @@ fun RoomLobbyScreen(
     viewModel: RoomLobbyViewModel,
     onBack: () -> Unit,
     onGoHome: () -> Unit = {},
+    onOpenEvent: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
     val clipboard = LocalClipboardManager.current
     val room = state.room
-    LaunchedEffect(room?.phase, room?.winner) {
-        if (room?.phase == RoomPhase.MATCHED &&
-            room.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.PLACE &&
-            state.catalogDetails == null && !state.busy
-        ) viewModel.openWinner()
+    LaunchedEffect(room?.phase, room?.winner, state.busy, state.error) {
+        if (room?.phase == RoomPhase.MATCHED && state.catalogDetails == null && state.error == null) {
+            viewModel.preloadWinner()
+        }
     }
-    state.catalogDetails?.let { details ->
+    state.catalogDetails?.takeIf { state.winnerDetailsOpen }?.let { details ->
         FeedCatalogDetailsScreen(
             details = details,
             onBack = viewModel::closeWinner,
             onGoHome = onGoHome,
+            modifier = modifier,
+        )
+        return
+    }
+    if (room?.phase == RoomPhase.VOTING && room.myFinished) {
+        RoomWaitScreen(
+            onBack = { viewModel.leave(); onBack() },
+            onStart = { viewModel.leave(); onBack() },
+            modifier = modifier,
+        )
+        return
+    }
+    if (room?.phase == RoomPhase.MATCHED) {
+        RoomMatchScreen(
+            room = room,
+            details = state.catalogDetails,
+            loading = state.busy,
+            error = state.error,
+            onBack = { viewModel.leave(); onBack() },
+            onOpen = {
+                if (room.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) {
+                    room.winner?.id?.let(onOpenEvent)
+                } else viewModel.openWinner()
+            },
             modifier = modifier,
         )
         return
@@ -145,99 +169,8 @@ fun RoomLobbyScreen(
                     loading = state.busy
                 )
             }
-        } else if (room.phase == RoomPhase.VOTING) {
-            Text(room.name.orEmpty(), style = SrType.Display, color = SrColors.Text,
-                maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(
-                "Раунд ${room.roundNumber ?: 1} · ${state.voteIndex.coerceAtMost(room.candidates.size)}/${room.candidates.size}",
-                style = SrType.Label,
-                color = SrColors.Muted
-            )
-            room.expiresAt?.let {
-                Text(
-                    "Раунд до $it",
-                    style = SrType.Label,
-                    color = SrColors.Muted
-                )
-            }
-            if (room.myFinished) {
-                Text("Ваш голос принят", style = SrType.Display, color = SrColors.Text)
-                Text(
-                    "Если большинство выберет один вариант, покажем его всем. Иначе обновим подборку.",
-                    style = SrType.Body,
-                    color = SrColors.Muted
-                )
-                Text(
-                    "Завершили ${room.finishedCount} из ${room.memberCount}",
-                    style = SrType.Label,
-                    color = SrColors.Muted
-                )
-                if (state.reviewing) {
-                    room.candidates.getOrNull(state.voteIndex)?.let { card ->
-                        Text(
-                            "${card.title}: ${room.myVotes[card.ref.id] ?: "—"}",
-                            style = SrType.Body,
-                            color = SrColors.Text
-                        )
-                    }
-                    SrButton(
-                        "Следующая",
-                        viewModel::nextReview,
-                        Modifier.fillMaxWidth(),
-                        enabled = state.voteIndex < room.candidates.lastIndex
-                    )
-                    SrButton("Назад к ожиданию", viewModel::stopReview, Modifier.fillMaxWidth())
-                } else SrButton(
-                    "Просмотреть свои голоса",
-                    viewModel::review,
-                    Modifier.fillMaxWidth()
-                )
-            } else {
-                val card = room.candidates.getOrNull(state.voteIndex)
-                if (card == null) SrButton(
-                    "Завершить голосование",
-                    viewModel::finish,
-                    Modifier.fillMaxWidth(),
-                    enabled = !state.busy
-                )
-                else {
-                    SrVoteCard(
-                        card.title,
-                        emptyList(),
-                        {
-                            SrArtwork(
-                                SrIllustration.VoteCompact,
-                                Modifier.fillMaxSize(),
-                                card.title
-                            )
-                        },
-                        Modifier.fillMaxWidth(),
-                        size = SrVoteCardSize.Tall,
-                        description = card.description.takeIf { it.isNotBlank() })
-                    VoteDirectionHint()
-                }
-            }
         } else if (room.phase == RoomPhase.REFRESHING) {
             Text("Обновляем подборку", style = SrType.Display, color = SrColors.Text)
-        } else if (room.phase == RoomPhase.MATCHED) {
-            Text("Матч большинства", style = SrType.Display, color = SrColors.Text)
-            Text(
-                "${room.resultLikes ?: 0} из ${room.resultMemberCount ?: room.members.size} выбрали этот вариант",
-                style = SrType.Body,
-                color = SrColors.Muted
-            )
-            Text(
-                "${room.winner?.kind ?: ""} · ${room.winner?.id ?: ""}",
-                style = SrType.Body,
-                color = SrColors.Text
-            )
-            SrButton(
-                if (room.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) "О событии" else "О месте",
-                viewModel::openWinner,
-                Modifier.fillMaxWidth(),
-                loading = state.busy
-            )
-            SrButton("На главный экран", onGoHome, Modifier.fillMaxWidth())
         } else if (room.phase == RoomPhase.CLOSED || room.phase == RoomPhase.EXHAUSTED) {
             Text(
                 if (room.phase == RoomPhase.CLOSED) "Комната закрыта" else "Больше вариантов нет",
