@@ -93,3 +93,9 @@ UI-прогон экранов [10–13](../../../../../../../../docs/specs/swip
 Дизайн: [состояния голосования и результата](../../../../../../../../docs/design/feed.md), [Figma Page 2](https://www.figma.com/design/khewsPf7b4JVyBwJaCmO43/startap_design?node-id=280-7618). Контракт room-v2: архив frontend API от 2026-11-13. Android реализован в `RoomLobbyScreen`; iOS остаётся на прежнем потоке до отдельного пакета.
 
 Android принимает приглашения `https://srastemsya.nixbi.ru/room-invites/join?token=…` и `srastemsya://room-invites/join?token=…`. Для автоматического открытия HTTPS-ссылки домен должен отдавать `/.well-known/assetlinks.json` с идентификатором пакета и SHA-256 сертификата сборки. Кнопка копирования использует URL из ответа сервера.
+
+## UI-прогон 06–09
+
+После первого одиночного `LIKE` `FeedModeState.chosen` показывает отдельный полноэкранный результат с обложкой и действием открытия деталей. `selectedDetailsOpen` отделяет этот шаг от деталей: `OpenCatalogDetails` загружает `GetCatalogDetailsUseCase` для места, а для события передаёт выбранную ссылку общей странице событий через `NavigationMain`. `CloseSelection` возвращает к карточке.
+
+После последнего `SKIP` `FeedModeViewModel.loadNextPage` использует сохранённые фильтры и курсор. `FeedSwipeState.loadingNextPool` показывает стабильный скелетон вместо старой карточки; ответ с кандидатами сразу использует общий `FeedSwipeCardStack`, пустой ответ открывает состояние исчерпания и возврат к сохранённым фильтрам. [Спецификации 06–09](../../../../../../../../docs/specs/swipe-ui/README.md), [описание дизайна](../../../../../../../../docs/design/feed.md#ui-прогон-результат-и-следующая-порция-0609).
