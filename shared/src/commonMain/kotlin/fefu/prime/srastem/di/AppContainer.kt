@@ -111,6 +111,7 @@ class AppContainer(
         roomRepository::getSnapshot,
         GetCatalogDetailsUseCase(feedRepository),
         SettingsActiveRoomStore(settings),
+        GetFeedCategoriesUseCase(BackendFeedCategoryRepository(api)),
     )
 
     fun createProfileViewModel() = ProfileViewModel(profileRepository)
