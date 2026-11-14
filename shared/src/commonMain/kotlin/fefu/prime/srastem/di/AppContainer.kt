@@ -59,7 +59,7 @@ class AppContainer(
     private val roomRepository: RoomRepository = configuredRoomRepository ?: BackendRoomRepository(api)
     private val onboardingRepository = SettingsOnboardingRepository(settings)
     private val registrationRepository = BackendRegistrationRepository(api, settings)
-    private val profileRepository = SettingsProfileRepository(settings, eventRepository)
+    private val profileRepository = SettingsProfileRepository(settings, api, eventRepository)
     private val homeRepository = BackendHomeRepository(api)
 
     // Use cases ленты (FE-F00…FE-F06): по одному на операцию контракта Discovery v1.
@@ -111,13 +111,14 @@ class AppContainer(
         roomRepository::getSnapshot,
         GetCatalogDetailsUseCase(feedRepository),
         SettingsActiveRoomStore(settings),
+        GetFeedCategoriesUseCase(BackendFeedCategoryRepository(api)),
     )
 
     fun createProfileViewModel() = ProfileViewModel(profileRepository)
 
     fun createEventViewModel() = EventViewModel(EventUseCases(eventRepository))
 
-    fun createHomeViewModel() = HomeViewModel(GetHome(homeRepository))
+    fun createHomeViewModel() = HomeViewModel(GetHome(homeRepository), profileRepository)
 
     fun createMapCatalogViewModel() = MapCatalogViewModel(ObserveMapMarkers(BackendMapCatalogRepository(api)), settings)
 }

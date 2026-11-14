@@ -35,6 +35,7 @@ internal actual fun FigmaSvg(
         "home_next" -> Res.drawable.home_next
         "home_chevron" -> Res.drawable.home_chevron
         "home_heart" -> Res.drawable.home_heart
+        "home_heart_filled" -> Res.drawable.home_heart_filled
         "f8380_img" -> Res.drawable.f8380_img
         "f8380_imgcalendar" -> Res.drawable.f8380_imgcalendar
         "f8380_imghome" -> Res.drawable.f8380_imghome

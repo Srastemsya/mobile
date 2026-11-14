@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class FeedModeViewModel(
@@ -80,9 +81,17 @@ class FeedModeViewModel(
                 )
             }
 
-            FeedModeEvent.OpenCatalogDetails, FeedModeEvent.RetryCatalogDetails -> loadCatalogDetails()
+            FeedModeEvent.OpenCatalogDetails -> {
+                _state.update { it.copy(selectedDetailsOpen = true) }
+                if (_state.value.chosen?.ref?.kind == FeedKind.PLACE) loadCatalogDetails()
+            }
+            FeedModeEvent.RetryCatalogDetails -> loadCatalogDetails()
+            FeedModeEvent.CloseSelection -> _state.update {
+                it.copy(chosen = null, selectedDetailsOpen = false, catalogDetails = null, detailsError = null)
+            }
             FeedModeEvent.CloseCatalogDetails -> _state.update {
                 it.copy(
+                    selectedDetailsOpen = false,
                     catalogDetails = null,
                     detailsError = null
                 )
@@ -219,6 +228,20 @@ class FeedModeViewModel(
             return
         }
         val cursor = swipe.nextCursor
+        if (cursor == null && current.kind == FeedKind.PLACE) {
+            _state.update {
+                it.copy(swipe = after.copy(loadingNextPool = true), feedError = null, feedExhausted = false)
+            }
+            viewModelScope.launch {
+                delay(350)
+                _state.update {
+                    if (it.swipe.loadingNextPool && it.swipe.current == null && !it.filterOpen && it.chosen == null) {
+                        it.copy(swipe = FeedSwipeState(), feedExhausted = true)
+                    } else it
+                }
+            }
+            return
+        }
         if (cursor == null || getCandidates == null) {
             _state.update { it.copy(swipe = after, feedError = null, feedExhausted = true) }
             return
@@ -239,7 +262,7 @@ class FeedModeViewModel(
                     if (page.items.isEmpty()) state.copy(
                         swipe = FeedSwipeState(nextCursor = page.nextCursor),
                         feedError = null,
-                        feedExhausted = page.nextCursor == null
+                        feedExhausted = true
                     )
                     else state.copy(
                         swipe = FeedSwipeState.fromCandidates(

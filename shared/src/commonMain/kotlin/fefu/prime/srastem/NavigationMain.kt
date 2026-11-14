@@ -92,7 +92,6 @@ fun NavigationMain(
 
             registrationState.isVisible -> RegistrationScreen(
                 state = registrationState,
-                onPhoneSelected = registrationViewModel::onPhoneSelected,
                 onEmailSelected = registrationViewModel::onEmailSelected,
                 onContactChanged = registrationViewModel::onContactChanged,
                 onRequestCode = registrationViewModel::onRequestCode,
@@ -179,19 +178,14 @@ private fun MainNavigation(
     LaunchedEffect(
         currentDestination,
         feedState.chosen?.ref,
+        feedState.selectedDetailsOpen,
         roomState.room?.phase,
         roomState.room?.winner,
         feedState.stub?.title,
     ) {
         val selectedEvent = when {
-            currentDestination == Destination.FeedScreen && feedState.chosen?.ref?.kind ==
+            currentDestination == Destination.FeedScreen && feedState.selectedDetailsOpen && feedState.chosen?.ref?.kind ==
                 fefu.prime.srastem.feed.domain.FeedKind.EVENT -> feedState.chosen?.ref
-
-            currentDestination == Destination.FeedScreen &&
-                feedState.stub?.title?.startsWith("FE-F04") == true &&
-                roomState.room?.phase == fefu.prime.srastem.feed.domain.RoomPhase.MATCHED &&
-                roomState.room!!.winner?.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT ->
-                roomState.room!!.winner
 
             else -> null
         }
@@ -238,10 +232,9 @@ private fun MainNavigation(
                     },
                 )
             }
-            // AC-03: таббар виден только на экране выбора режима ленты; последующие шаги
-            // (FE-F01 filters/results, FE-F04 stub, room steps) open over it without the tab bar.
+            // The swipe flow starts at device choice; its full-screen steps have no tab bar.
             val showBottomNavigation = currentDestination != Destination.MapScreen &&
-                    (currentDestination != Destination.FeedScreen || (feedState.stub == null && !feedState.filterOpen && feedState.cards.isEmpty() && feedState.feedError == null)) &&
+                    currentDestination != Destination.FeedScreen &&
                     (currentDestination != Destination.Profile || profileState.page == ProfilePage.HOME) &&
                     (currentDestination != Destination.EventsScreen || eventState.page == EventPage.LIST) &&
                     (currentDestination != Destination.RoomScreen || partyState.page == fefu.prime.srastem.party.presentation.PartyPage.MODE)
@@ -317,6 +310,10 @@ private fun DestinationContent(
                 roomLobbyViewModel,
                 onBack = { feedModeViewModel.onEvent(FeedModeEvent.DismissNotice) },
                 onGoHome = onGoHome,
+                onOpenEvent = { id ->
+                    eventViewModel.openEvent(id, returnHomeAfterSelection = true)
+                    onNavigate(Destination.EventsScreen)
+                },
                 modifier = modifier
             )
             return
@@ -325,7 +322,7 @@ private fun DestinationContent(
             state = feedState,
             onEvent = { event ->
                 if (event == FeedModeEvent.CompleteProfileSelected) onFeedProfileCompletionRequested()
-                if (event == FeedModeEvent.MultiDeviceSelected) roomLobbyViewModel.openCreate()
+                if (event == FeedModeEvent.MultiDeviceSelected) roomLobbyViewModel.openCreate(feedState.pendingKind)
                 feedModeViewModel.onEvent(event)
             },
             onGoHome = onGoHome,
@@ -337,7 +334,7 @@ private fun DestinationContent(
         ProfileScreen(profileViewModel, modifier = modifier, onOpenEvent = { id ->
             eventViewModel.openEvent(id)
             onNavigate(Destination.EventsScreen)
-        })
+        }, onOpenCollection = { onNavigate(Destination.MapScreen) })
         return
     }
     if (destination == Destination.EventsScreen) {

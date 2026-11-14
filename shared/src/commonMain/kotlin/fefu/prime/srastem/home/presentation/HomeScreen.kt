@@ -23,8 +23,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,26 +59,41 @@ fun HomeScreen(
     onOpenMap: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
+    var showMoodSoon by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { viewModel.refreshFavorites() }
 
     Column(
         modifier.fillMaxSize()
             .background(SrColors.Base)
             .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(top = 20.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         HomeHeader()
         WelcomePanel()
-        QuickActions(onOpenMap, onOpenFeed)
+        QuickActions(onMoodClick = { showMoodSoon = true }, onOpenFeed = onOpenFeed)
         PopularNearby(
             collections = state.content?.collections.orEmpty(),
+            savedCollectionIds = state.savedCollectionIds,
             isLoading = state.isLoading,
             error = state.error,
             onRetry = viewModel::refresh,
             onOpenEvents = onOpenEvents,
             onOpenMap = onOpenMap,
+            onToggleFavorite = { collection, cover -> viewModel.toggleFavorite(collection, cover.name) },
         )
-        Spacer(Modifier.height(96.dp))
+        Spacer(Modifier.height(180.dp))
+    }
+    if (showMoodSoon) {
+        AlertDialog(
+            onDismissRequest = { showMoodSoon = false },
+            title = { Text("Скоро") },
+            text = { Text("Подбор по настроению появится в одном из следующих обновлений.") },
+            confirmButton = {
+                TextButton(onClick = { showMoodSoon = false }) { Text("Понятно") }
+            },
+        )
     }
 }
 
@@ -156,12 +174,12 @@ private fun WelcomePanel() {
 }
 
 @Composable
-private fun QuickActions(onOpenMap: () -> Unit, onOpenFeed: () -> Unit) {
+private fun QuickActions(onMoodClick: () -> Unit, onOpenFeed: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().height(175.dp).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        QuickMoodAction(onOpenMap)
+        QuickMoodAction(onMoodClick)
         SwipeEventsAction(onOpenFeed)
     }
 }
@@ -303,11 +321,13 @@ private fun SwipeIllustration(modifier: Modifier = Modifier) {
 @Composable
 private fun PopularNearby(
     collections: List<fefu.prime.srastem.home.domain.HomeCollection>,
+    savedCollectionIds: Set<String>,
     isLoading: Boolean,
     error: String?,
     onRetry: () -> Unit,
     onOpenEvents: () -> Unit,
     onOpenMap: () -> Unit,
+    onToggleFavorite: (fefu.prime.srastem.home.domain.HomeCollection, SrHomeCover) -> Unit,
 ) {
     Column(
         Modifier.fillMaxWidth().padding(start = 20.dp),
@@ -362,13 +382,15 @@ private fun PopularNearby(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 collections.forEachIndexed { index, item ->
+                    val cover = when (index) {
+                        0 -> SrHomeCover.SvetlanskayaBars
+                        else -> SrHomeCover.RusskyWeekend
+                    }
                     HomeCollectionCard(
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        cover = when (index) {
-                            0 -> SrHomeCover.SvetlanskayaBars
-                            else -> SrHomeCover.RusskyWeekend
-                        },
+                        collection = item,
+                        cover = cover,
+                        isSaved = item.id in savedCollectionIds,
+                        onToggleFavorite = { onToggleFavorite(item, cover) },
                         onOpen = onOpenMap,
                     )
                 }
@@ -379,29 +401,30 @@ private fun PopularNearby(
 
 @Composable
 private fun HomeCollectionCard(
-    title: String,
-    subtitle: String,
+    collection: fefu.prime.srastem.home.domain.HomeCollection,
     cover: SrHomeCover,
+    isSaved: Boolean,
+    onToggleFavorite: () -> Unit,
     onOpen: () -> Unit
 ) {
-    var saved by remember(title) { mutableStateOf(false) }
     Column(
         Modifier.width(218.dp).height(223.dp).clip(RoundedCornerShape(20.dp))
             .background(SrColors.Solid)
             .clickable(role = Role.Button, onClick = onOpen),
     ) {
         Box(Modifier.width(218.dp).height(134.dp)) {
-            SrHomeCoverImage(cover, Modifier.fillMaxSize(), title)
+            SrHomeCoverImage(cover, Modifier.fillMaxSize(), collection.title)
             Box(
                 Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 9.dp).size(34.dp)
                     .clip(RoundedCornerShape(17.dp)).background(SrColors.Solid)
-                    .clickable(role = Role.Button, onClick = { saved = !saved }),
+                    .clickable(role = Role.Button, onClick = onToggleFavorite),
                 contentAlignment = Alignment.Center,
             ) {
                 SrHomeVectorImage(
-                    SrHomeVector.Heart,
+                    if (isSaved) SrHomeVector.HeartFilled else SrHomeVector.Heart,
                     Modifier.size(17.dp),
-                    if (saved) "Убрать из сохранённого" else "Сохранить подборку"
+                    if (isSaved) "Убрать из сохранённого" else "Сохранить подборку",
+                    tint = if (isSaved) SrColors.Primary else null,
                 )
             }
         }
@@ -410,7 +433,7 @@ private fun HomeCollectionCard(
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             Text(
-                title,
+                collection.title,
                 style = SrType.Title.copy(
                     fontSize = 16.sp,
                     lineHeight = 18.sp,
@@ -421,7 +444,7 @@ private fun HomeCollectionCard(
                 overflow = TextOverflow.Clip,
             )
             Text(
-                subtitle,
+                collection.subtitle,
                 style = SrType.Caption.copy(fontSize = 11.sp, lineHeight = 14.sp),
                 color = SrColors.Muted,
                 maxLines = 1

@@ -12,6 +12,7 @@ import org.jetbrains.compose.resources.painterResource
 import ru.srastemsya.uikit.resources.Res
 import ru.srastemsya.uikit.resources.home_bar_cover
 import ru.srastemsya.uikit.resources.home_russky_cover
+import ru.srastemsya.uikit.resources.swipe_accept_ticket
 
 enum class SrIcon(internal val file: String, internal val naturalSize: Int) {
     Home("f8380_imghome", 22), Map("f8380_imgpin", 22), Feed("f8380_img", 22),
@@ -49,14 +50,18 @@ fun SrArtwork(artwork: SrIllustration, modifier: Modifier = Modifier, descriptio
 enum class SrHomeVector(internal val file: String) {
     Brand("home_logo"), Bay("home_bay"), Bell("home_bell"), Spark("home_spark"),
     SwipeArt("home_swipe_art"), SwipeSpark("home_swipe_spark"), Compass("home_compass"),
-    Next("home_next"), Chevron("home_chevron"), Heart("home_heart")
+    Next("home_next"), Chevron("home_chevron"), Heart("home_heart"), HeartFilled("home_heart_filled")
 }
 
 enum class SrHomeCover { SvetlanskayaBars, RusskyWeekend }
 
 @Composable
-fun SrHomeVectorImage(vector: SrHomeVector, modifier: Modifier = Modifier, description: String? = null) =
-    FigmaSvg(vector.file, modifier, description)
+fun SrHomeVectorImage(
+    vector: SrHomeVector,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    tint: Color? = null,
+) = FigmaSvg(vector.file, modifier, description, tint)
 
 @Composable
 fun SrHomeCoverImage(cover: SrHomeCover, modifier: Modifier = Modifier, description: String? = null) {
@@ -65,6 +70,16 @@ fun SrHomeCoverImage(cover: SrHomeCover, modifier: Modifier = Modifier, descript
         SrHomeCover.RusskyWeekend -> painterResource(Res.drawable.home_russky_cover)
     }
     Image(painter, description, modifier, contentScale = ContentScale.Crop)
+}
+
+@Composable
+fun SrSwipeAcceptImage(modifier: Modifier = Modifier, description: String = "Да") {
+    Image(
+        painterResource(Res.drawable.swipe_accept_ticket),
+        description,
+        modifier,
+        contentScale = ContentScale.Fit,
+    )
 }
 
 @Composable

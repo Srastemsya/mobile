@@ -38,5 +38,12 @@
 
 | Экран | Зависимость | Статус | Ветка / worktree | Отчёт |
 |---|---|---|---|---|
-| 01 Открытия | — | INTEGRATED; final TESTING | `codex/ui-01-discovery` → `codex/ui-swipe-integration` | Пользователь подтвердил, что первая страница выглядит нормально; прежний staging-блокер и отчёты сохранены. Общий финальный прогон ещё нужен. |
-| 02–17 | Порядок из `docs/specs/swipe-ui/README.md` | TODO | отдельная ветка на экран | Один PM, до двух Developer параллельно; затем интеграция и поэкранная проверка Tester. |
+| 01 Открытия | — | MERGED; final revision not revalidated | `new_ui` | User previously confirmed the screen looked right. Historical staging/runtime blockers and reports remain; this merge turn did not run a build or device check. |
+| 02–03 | 02 → 03; then swipe screens 04/05 | MERGED; runtime BLOCKED in historical report | `new_ui` | Screen code and reports merged. Device input/access blocker remains in the archived report; no fresh runtime verdict on the final merge revision. |
+| 04–05 | После 02–03 | MERGED; final revision not revalidated | `new_ui` | Solo place/event swipe implementations and per-screen reports merged. No build or device check was run during the merge. |
+| 06–09 | После соответствующих экранов выбора и свайпа | MERGED; final revision not revalidated | `new_ui` | Selection, refresh, next batch and exhausted states merged with their per-screen docs/reports. |
+| 10–13 | 10 → 11 → 12 → 13; then room swipe screens 14/15 | MERGED; screen 13 BLOCKED by contract gap | `new_ui` | Room create/lobby/filter UI merged. Per-member filter submit/wait/aggregation still lacks a matching design and backend contract; do not infer it in UI. |
+| 14–15 | После 10–13 | MERGED; final revision not revalidated | `new_ui` | Room place/event swipe screens merged. Their reports remain historical and are not a final-revision runtime attestation. |
+| 16–17 | После 14/15 | MERGED; final revision not revalidated | `new_ui` | Waiting/match screens merged. Historical product question about the TOP_SCORE label remains documented. |
+
+All 11 remote `codex/ui_*` branches are ancestors of `new_ui`. Merge revision at the time of this update: recorded after the role/configuration follow-up commit. Only PM and Developer are active workflow roles; no fresh integrated build or device acceptance was run for this merge.

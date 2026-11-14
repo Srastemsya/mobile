@@ -52,6 +52,7 @@ import coil3.compose.AsyncImage
 import fefu.prime.srastem.profile.domain.EventStatus
 import fefu.prime.srastem.profile.domain.ProfileDetails
 import fefu.prime.srastem.profile.domain.ProfileEvent
+import fefu.prime.srastem.profile.domain.ProfileSavedKind
 import fefu.prime.srastem.platform.media.PlatformImagePicker
 import ru.srastemsya.uikit.SrArtwork
 import ru.srastemsya.uikit.SrButton
@@ -63,17 +64,20 @@ import ru.srastemsya.uikit.SrFieldKind
 import ru.srastemsya.uikit.SrGlyph
 import ru.srastemsya.uikit.SrIcon
 import ru.srastemsya.uikit.SrIllustration
+import ru.srastemsya.uikit.SrHomeCover
+import ru.srastemsya.uikit.SrHomeCoverImage
 import ru.srastemsya.uikit.SrType
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     modifier: Modifier = Modifier,
-    onOpenEvent: (String) -> Unit = {}
+    onOpenEvent: (String) -> Unit = {},
+    onOpenCollection: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(state.page) {
-        if (state.page == ProfilePage.EVENTS) viewModel.refresh()
+        if (state.page == ProfilePage.EVENTS || state.page == ProfilePage.SAVED) viewModel.refresh()
     }
     Column(
         modifier = modifier.fillMaxSize()
@@ -85,7 +89,7 @@ fun ProfileScreen(
         when (state.page) {
             ProfilePage.HOME -> HomePage(state.profile, viewModel)
             ProfilePage.DETAILS -> DetailsPage(state.profile, viewModel)
-            ProfilePage.SAVED -> SavedPage(state.savedEvents, viewModel, onOpenEvent)
+            ProfilePage.SAVED -> SavedPage(state.savedEvents, viewModel, onOpenEvent, onOpenCollection)
             ProfilePage.EVENTS -> EventsPage(state.myEvents, viewModel, onOpenEvent)
         }
     }
@@ -235,18 +239,19 @@ private fun DetailsPage(profile: ProfileDetails, vm: ProfileViewModel) {
 private fun SavedPage(
     events: List<ProfileEvent>,
     vm: ProfileViewModel,
-    onOpenEvent: (String) -> Unit
+    onOpenEvent: (String) -> Unit,
+    onOpenCollection: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
         SubHeader("Сохранённое", vm::back)
         Text(
-            "События, которые вам понравились",
+            "Подборки и события, которые вам понравились",
             Modifier.padding(top = 20.dp, bottom = 12.dp),
             style = SrType.Body,
             color = SrColors.Muted,
         )
         if (events.isEmpty()) {
-            EmptyProfileList("Здесь пока нет сохранённых событий")
+            EmptyProfileList("Здесь пока ничего нет в избранном")
         } else {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -255,7 +260,10 @@ private fun SavedPage(
                 events.forEach { event ->
                     SavedEventCard(
                         event,
-                        onOpen = { onOpenEvent(event.id) },
+                        onOpen = {
+                            if (event.kind == ProfileSavedKind.HOME_COLLECTION) onOpenCollection()
+                            else onOpenEvent(event.id)
+                        },
                         onRemove = { vm.removeSaved(event.id) })
                 }
             }
@@ -532,11 +540,18 @@ private fun SavedEventCard(event: ProfileEvent, onOpen: () -> Unit, onRemove: ()
             state = SrEventListState.Saved,
             onOpen = onOpen,
             cover = {
-                SrArtwork(
-                    SrIllustration.EventThumbnail,
-                    Modifier.fillMaxSize(),
-                    event.title
-                )
+                if (event.kind == ProfileSavedKind.HOME_COLLECTION) {
+                    val cover = event.coverKey?.let { key ->
+                        runCatching { SrHomeCover.valueOf(key) }.getOrNull()
+                    } ?: SrHomeCover.SvetlanskayaBars
+                    SrHomeCoverImage(cover, Modifier.fillMaxSize(), event.title)
+                } else {
+                    SrArtwork(
+                        SrIllustration.EventThumbnail,
+                        Modifier.fillMaxSize(),
+                        event.title
+                    )
+                }
             },
         )
         SrButton(

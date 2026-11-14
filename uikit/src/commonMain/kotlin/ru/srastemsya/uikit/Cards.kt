@@ -37,8 +37,10 @@ fun SrCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier.fillMaxWidth().srGlass(backdrop, SrShapes.Card, SrGlassMode.Frosted,
-            SrColors.Solid.copy(alpha = .86f)).padding(12.dp),
+        modifier.fillMaxWidth().srGlass(
+            backdrop, SrShapes.Card, SrGlassMode.Frosted,
+            SrColors.Solid.copy(alpha = .86f)
+        ).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp), content = content
     )
 }
@@ -59,28 +61,51 @@ fun SrStatus(
         else -> SrColors.Primary
     }
     SrCard(modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-        if (state == SrFeedback.Loading) CircularProgressIndicator(Modifier.size(20.dp), color = color, strokeWidth = 2.dp)
+        if (state == SrFeedback.Loading) CircularProgressIndicator(
+            Modifier.size(20.dp),
+            color = color,
+            strokeWidth = 2.dp
+        )
         else SrGlyph(state.icon, tint = color)
         Text(title, style = SrType.Title, color = SrColors.Text)
         Text(message, style = SrType.Body, color = SrColors.Muted)
-        if (actionLabel != null && onAction != null && state != SrFeedback.Loading) SrButton(actionLabel, onAction)
+        if (actionLabel != null && onAction != null && state != SrFeedback.Loading) SrButton(
+            actionLabel,
+            onAction
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SrSheet(
-    title: String, message: String, onDismiss: () -> Unit, actionLabel: String, onAction: () -> Unit,
-    modifier: Modifier = Modifier, dismissLabel: String? = null
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissLabel: String? = null
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier, containerColor = SrColors.Solid) {
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+        containerColor = SrColors.Solid
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(title, style = SrType.Heading, color = SrColors.Text)
             Text(message, style = SrType.Body, color = SrColors.Muted)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SrButton(actionLabel, onAction, Modifier.weight(1f))
-                if (dismissLabel != null) SrButton(dismissLabel, onDismiss, Modifier.weight(1f), SrButtonStyle.Secondary)
+                if (dismissLabel != null) SrButton(
+                    dismissLabel,
+                    onDismiss,
+                    Modifier.weight(1f),
+                    SrButtonStyle.Secondary
+                )
             }
         }
     }
@@ -93,13 +118,27 @@ fun SrAvatar(initials: String, modifier: Modifier = Modifier, name: String? = nu
             .then(if (name != null) Modifier.semantics { contentDescription = name } else Modifier),
         contentAlignment = Alignment.Center
     ) {
-        Text(initials, style = SrType.Caption, color = SrColors.Primary, maxLines = 1, overflow = TextOverflow.Clip)
+        Text(
+            initials,
+            style = SrType.Caption,
+            color = SrColors.Primary,
+            maxLines = 1,
+            overflow = TextOverflow.Clip
+        )
     }
 }
 
 @Composable
-fun SrAvatarGroup(initials: List<String>, modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+fun SrAvatarGroup(
+    initials: List<String>,
+    modifier: Modifier = Modifier,
+    onInvite: (() -> Unit)? = null
+) {
+    Row(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         initials.take(4).forEach { SrAvatar(it) }
         if (initials.size > 4) SrAvatar("+${initials.size - 4}", name = "Ещё ${initials.size - 4}")
         if (onInvite != null) SrIconButton(SrIcon.Plus, "Пригласить", onInvite)
@@ -112,14 +151,23 @@ enum class SrRoomState(val title: String) {
 
 @Composable
 fun SrRoomSummary(
-    title: String, subtitle: String, initials: List<String>, state: SrRoomState, onAction: () -> Unit,
+    title: String,
+    subtitle: String,
+    initials: List<String>,
+    state: SrRoomState,
+    onAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SrCard(modifier) {
         Text(title, style = SrType.Heading, color = SrColors.Text)
         Text(subtitle, style = SrType.Body, color = SrColors.Muted)
         SrAvatarGroup(initials)
-        SrButton(state.title, onAction, Modifier.fillMaxWidth(), enabled = state != SrRoomState.Waiting)
+        SrButton(
+            state.title,
+            onAction,
+            Modifier.fillMaxWidth(),
+            enabled = state != SrRoomState.Waiting
+        )
     }
 }
 
@@ -131,7 +179,10 @@ fun SrRoomInvite(
     modifier: Modifier = Modifier
 ) {
     SrCard(modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-        SrGlyph(if (state == SrInviteState.Copied) SrIcon.Check else SrIcon.Link, tint = SrColors.Primary)
+        SrGlyph(
+            if (state == SrInviteState.Copied) SrIcon.Check else SrIcon.Link,
+            tint = SrColors.Primary
+        )
         Text(title, style = SrType.Title, color = SrColors.Text)
         Text(message, style = SrType.Body, color = SrColors.Muted)
         when (state) {
@@ -142,7 +193,12 @@ fun SrRoomInvite(
     }
 }
 
-enum class SrVoteCardSize(internal val ratio: Float) { Compact(238f / 142), Tall(238f / 205), Full(238f / 300) }
+enum class SrVoteCardSize(internal val ratio: Float) {
+    Compact(238f / 142), Tall(238f / 205), Full(
+        238f / 300
+    )
+}
+
 enum class SrVoteMark { None, Like, Pass }
 
 @Composable
@@ -161,8 +217,13 @@ fun SrVoteCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 metadata.forEach { item ->
-                    Text(item, Modifier.clip(SrShapes.Pill).background(SrColors.Tint).padding(horizontal = 6.dp, vertical = 3.dp),
-                        style = SrType.Caption, color = SrColors.Text)
+                    Text(
+                        item,
+                        Modifier.clip(SrShapes.Pill).background(SrColors.Tint)
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                        style = SrType.Caption,
+                        color = SrColors.Text
+                    )
                 }
             }
         }
@@ -177,17 +238,30 @@ fun SrVoteCard(
 
 @Composable
 fun SrVoteActions(
-    onPass: () -> Unit, onLike: () -> Unit, modifier: Modifier = Modifier,
-    onUndo: (() -> Unit)? = null, progress: Float? = null, backdrop: SrBackdrop? = LocalSrBackdrop.current
+    onPass: () -> Unit,
+    onLike: () -> Unit,
+    modifier: Modifier = Modifier,
+    onUndo: (() -> Unit)? = null,
+    progress: Float? = null,
+    backdrop: SrBackdrop? = LocalSrBackdrop.current
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SrIconButton(SrIcon.Undo, "Отменить выбор", { onUndo?.invoke() }, backdrop = backdrop, enabled = onUndo != null)
+            SrIconButton(
+                SrIcon.Undo,
+                "Отменить выбор",
+                { onUndo?.invoke() },
+                backdrop = backdrop,
+                enabled = onUndo != null
+            )
             SrIconButton(SrIcon.Close, "Пропустить", onPass, backdrop = backdrop)
             SrIconButton(SrIcon.Heart, "Нравится", onLike, primary = true)
         }
         progress?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)?.let {
-            androidx.compose.material3.LinearProgressIndicator(progress = { it }, modifier = Modifier.width(160.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { it },
+                modifier = Modifier.width(160.dp)
+            )
         }
     }
 }
@@ -211,12 +285,22 @@ fun SrEventCover(
     modifier: Modifier = Modifier, onUpload: (() -> Unit)? = null,
     cover: (@Composable BoxScope.() -> Unit)? = null
 ) {
-    Box(Modifier.then(modifier).fillMaxWidth().aspectRatio(264f / 120f).clip(SrShapes.Control)
-        .background(SrColors.Tint)
-        .then(if (cover == null && onUpload != null) Modifier.clickable(role = Role.Button, onClick = onUpload) else Modifier),
-        contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.then(modifier).fillMaxWidth().aspectRatio(264f / 120f).clip(SrShapes.Control)
+            .background(SrColors.Tint)
+            .then(
+                if (cover == null && onUpload != null) Modifier.clickable(
+                    role = Role.Button,
+                    onClick = onUpload
+                ) else Modifier
+            ),
+        contentAlignment = Alignment.Center
+    ) {
         if (cover != null) cover()
-        else Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        else Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             SrGlyph(SrIcon.Photo, size = 24.dp)
             Text(if (onUpload != null) "Добавить обложку" else "Без обложки", style = SrType.Label)
         }
@@ -238,14 +322,21 @@ fun SrEventParticipation(
             SrParticipation.Join -> SrButton(joinLabel, onJoin)
             SrParticipation.Joined -> EventMeta(SrIcon.Check, "Вы участвуете")
             SrParticipation.Full -> Text("Мест нет", style = SrType.Label, color = SrColors.Muted)
-            SrParticipation.Cancelled -> Text("Событие отменено", style = SrType.Label, color = SrColors.Error)
+            SrParticipation.Cancelled -> Text(
+                "Событие отменено",
+                style = SrType.Label,
+                color = SrColors.Error
+            )
         }
     }
 }
 
 @Composable
 private fun EventMeta(icon: SrIcon, text: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         SrGlyph(icon, size = 14.dp)
         Text(text, style = SrType.Caption, color = SrColors.Muted)
     }
@@ -259,13 +350,19 @@ fun SrPublishBar(
     errorMessage: String = "Не удалось опубликовать", label: String = "Опубликовать"
 ) {
     SrCard(modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-        if (state == SrPublishState.Error) Text(errorMessage, style = SrType.Caption, color = SrColors.Error)
-        SrButton(when (state) {
-            SrPublishState.Error -> "Повторить"
-            SrPublishState.Submitting -> "Публикуем…"
-            else -> label
-        }, onPublish, Modifier.fillMaxWidth(), enabled = state != SrPublishState.Disabled,
-            loading = state == SrPublishState.Submitting)
+        if (state == SrPublishState.Error) Text(
+            errorMessage,
+            style = SrType.Caption,
+            color = SrColors.Error
+        )
+        SrButton(
+            when (state) {
+                SrPublishState.Error -> "Повторить"
+                SrPublishState.Submitting -> "Публикуем…"
+                else -> label
+            }, onPublish, Modifier.fillMaxWidth(), enabled = state != SrPublishState.Disabled,
+            loading = state == SrPublishState.Submitting
+        )
     }
 }
 
@@ -277,8 +374,14 @@ fun SrProfileIdentity(
     SrCard(modifier) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(SrShapes.Small)
-                .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically
+                .then(
+                    if (onClick != null) Modifier.clickable(
+                        role = Role.Button,
+                        onClick = onClick
+                    ) else Modifier
+                ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             SrAvatar(initials)
             Column(Modifier.weight(1f)) {
@@ -294,8 +397,10 @@ fun SrProfileIdentity(
 fun SrProfileStats(stats: List<Pair<String, String>>, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         stats.forEach { (value, label) ->
-            Column(Modifier.weight(1f).srGlass(null, SrShapes.Small).padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier.weight(1f).srGlass(null, SrShapes.Small).padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(value, style = SrType.Title, color = SrColors.Text)
                 Text(label, style = SrType.Caption, color = SrColors.Muted)
             }
@@ -306,20 +411,24 @@ fun SrProfileStats(stats: List<Pair<String, String>>, modifier: Modifier = Modif
 @Composable
 fun SrRating(value: Int, modifier: Modifier = Modifier, onChange: ((Int) -> Unit)? = null) {
     require(value in 0..5)
-    val semantics = if (onChange == null) Modifier.semantics { contentDescription = "Оценка: $value из 5" }
-                    else Modifier.selectableGroup()
+    val semantics =
+        if (onChange == null) Modifier.semantics { contentDescription = "Оценка: $value из 5" }
+        else Modifier.selectableGroup()
     Row(modifier.then(semantics), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         (1..5).forEach { rating ->
             val selected = value >= rating
             Box(
                 if (onChange == null) Modifier.size(22.dp)
-                else Modifier.size(48.dp).clip(SrShapes.Small).selectable(value == rating,
+                else Modifier.size(48.dp).clip(SrShapes.Small).selectable(
+                    value == rating,
                     role = Role.RadioButton, onClick = { onChange(rating) })
                     .semantics { contentDescription = "$rating из 5" },
                 contentAlignment = Alignment.Center
             ) {
-                SrGlyph(if (selected) SrIcon.Star else SrIcon.StarOutline,
-                    tint = if (selected) SrColors.Primary else SrColors.Muted, size = 16.dp)
+                SrGlyph(
+                    if (selected) SrIcon.Star else SrIcon.StarOutline,
+                    tint = if (selected) SrColors.Primary else SrColors.Muted, size = 16.dp
+                )
             }
         }
     }
@@ -334,17 +443,31 @@ fun SrReviewEditor(
     SrCard(modifier) {
         Text("Как всё прошло?", style = SrType.Heading, color = SrColors.Text)
         SrRating(rating, onChange = if (submitting) null else onRatingChange)
-        SrField(comment, onCommentChange, "Комментарий", kind = SrFieldKind.Multiline,
-            placeholder = "Расскажите о встрече", enabled = !submitting, errorMessage = errorMessage)
-        SrButton(if (submitting) "Отправляем…" else "Оставить отзыв", onSubmit, enabled = rating > 0, loading = submitting)
+        SrField(
+            comment, onCommentChange, "Комментарий", kind = SrFieldKind.Multiline,
+            placeholder = "Расскажите о встрече", enabled = !submitting, errorMessage = errorMessage
+        )
+        SrButton(
+            if (submitting) "Отправляем…" else "Оставить отзыв",
+            onSubmit,
+            enabled = rating > 0,
+            loading = submitting
+        )
     }
 }
 
 @Composable
 fun SrAuthCode(
-    code: String, onCodeChange: (String) -> Unit, onResend: () -> Unit, modifier: Modifier = Modifier,
-    length: Int = 6, canResend: Boolean = true, enabled: Boolean = true, errorMessage: String? = null,
-    instruction: String = "Введите код из сообщения", resendLabel: String = "Отправить код ещё раз"
+    code: String,
+    onCodeChange: (String) -> Unit,
+    onResend: () -> Unit,
+    modifier: Modifier = Modifier,
+    length: Int = 6,
+    canResend: Boolean = true,
+    enabled: Boolean = true,
+    errorMessage: String? = null,
+    instruction: String = "Введите код из сообщения",
+    resendLabel: String = "Отправить код ещё раз"
 ) {
     require(length in 4..8)
     var focused by remember { mutableStateOf(false) }
@@ -352,37 +475,66 @@ fun SrAuthCode(
         Text("Введите код", style = SrType.Heading, color = SrColors.Text)
         Text(instruction, style = SrType.Body, color = SrColors.Muted)
         BasicTextField(
-            value = code, onValueChange = { onCodeChange(it.filter { c -> c in '0'..'9' }.take(length)) },
+            value = code,
+            onValueChange = { onCodeChange(it.filter { c -> c in '0'..'9' }.take(length)) },
             modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }.semantics {
                 contentDescription = "Код подтверждения"
                 errorMessage?.let { error(it) }
             },
-            textStyle = SrType.Title.copy(color = Color.Transparent), enabled = enabled, singleLine = true,
-            cursorBrush = SolidColor(Color.Transparent), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            textStyle = SrType.Title.copy(color = Color.Transparent),
+            enabled = enabled,
+            singleLine = true,
+            cursorBrush = SolidColor(Color.Transparent),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             decorationBox = { editor ->
                 Box {
-                    Row(Modifier.fillMaxWidth().clearAndSetSemantics {}, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth().clearAndSetSemantics {},
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         repeat(length) { i ->
-                            Box(Modifier.weight(1f).heightIn(min = 48.dp).clip(SrShapes.Small)
-                                .background(SrColors.Base).border(1.dp, when {
-                                    errorMessage != null -> SrColors.Error
-                                    i == code.length && enabled && focused -> SrColors.Primary
-                                    else -> SrColors.Border
-                                }, SrShapes.Small), contentAlignment = Alignment.Center) {
-                                code.getOrNull(i)?.let { Text(it.toString(), style = SrType.Title, color = SrColors.Text) }
+                            Box(
+                                Modifier.weight(1f).heightIn(min = 48.dp).clip(SrShapes.Small)
+                                    .background(SrColors.Base).border(
+                                        1.dp, when {
+                                            errorMessage != null -> SrColors.Error
+                                            i == code.length && enabled && focused -> SrColors.Primary
+                                            else -> SrColors.Border
+                                        }, SrShapes.Small
+                                    ), contentAlignment = Alignment.Center
+                            ) {
+                                code.getOrNull(i)?.let {
+                                    Text(
+                                        it.toString(),
+                                        style = SrType.Title,
+                                        color = SrColors.Text
+                                    )
+                                }
                             }
                         }
                     }
-                    Box(Modifier.matchParentSize().alpha(0f), contentAlignment = Alignment.CenterStart) { editor() }
+                    Box(
+                        Modifier.matchParentSize().alpha(0f),
+                        contentAlignment = Alignment.CenterStart
+                    ) { editor() }
                 }
             }
         )
         errorMessage?.let { Text(it, style = SrType.Caption, color = SrColors.Error) }
-        SrButton(resendLabel, onResend, style = SrButtonStyle.Secondary, enabled = canResend && enabled)
+        SrButton(
+            resendLabel,
+            onResend,
+            style = SrButtonStyle.Secondary,
+            enabled = canResend && enabled
+        )
     }
 }
 
-enum class SrEventListState(val label: String) { Registered("Записан"), Completed("Завершён"), Saved("Сохранён") }
+enum class SrEventListState(val label: String) {
+    Registered("Записан"), Completed("Завершён"), Saved(
+        "Сохранён"
+    )
+}
 
 @Composable
 fun SrEventListCard(
@@ -391,8 +543,12 @@ fun SrEventListCard(
     onReview: (() -> Unit)? = null
 ) {
     SrCard(modifier) {
-        Row(Modifier.fillMaxWidth().clip(SrShapes.Small).clickable(role = Role.Button, onClick = onOpen),
-            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().clip(SrShapes.Small)
+                .clickable(role = Role.Button, onClick = onOpen),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(Modifier.size(92.dp, 82.dp).clip(SrShapes.Small), content = cover)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(state.label, style = SrType.Caption, color = SrColors.Primary)
@@ -412,11 +568,12 @@ fun SrNotificationRow(
     title: String, subtitle: String, unread: Boolean, onOpen: () -> Unit,
     modifier: Modifier = Modifier, icon: SrIcon = SrIcon.Bell
 ) {
-    Row(modifier.fillMaxWidth().clip(SrShapes.Control)
-        .background(if (unread) SrColors.Tint else SrColors.Solid)
-        .clickable(role = Role.Button, onClick = onOpen)
-        .semantics { if (unread) contentDescription = "Непрочитанное уведомление" }
-        .padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Row(
+        modifier.fillMaxWidth().clip(SrShapes.Control)
+            .background(if (unread) SrColors.Tint else SrColors.Solid)
+            .clickable(role = Role.Button, onClick = onOpen)
+            .semantics { if (unread) contentDescription = "Непрочитанное уведомление" }
+            .padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically) {
         SrGlyph(icon, tint = SrColors.Primary)
         Column(Modifier.weight(1f)) {
