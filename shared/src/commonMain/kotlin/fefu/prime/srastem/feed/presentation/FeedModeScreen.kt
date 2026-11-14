@@ -77,15 +77,16 @@ fun FeedModeScreen(
         Column(
             modifier.fillMaxSize().background(FeedDesign.ScreenGradient)
                 .windowInsetsPadding(WindowInsets.statusBars).verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             SrTopBar(title = "Фильтры", onBack = { onEvent(FeedModeEvent.DismissNotice) })
             Text("Что ищем?", style = SrType.Display, color = SrColors.Text)
             Text(
-                "Вы выбираете вместе на одном устройстве",
+                "Вы выбираете вместе на одном устройстве.",
                 style = SrType.Body,
                 color = SrColors.Muted
             )
+            Text("Тип подборки", style = SrType.Label, color = SrColors.Muted)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SrChip(
                     "Места",
@@ -96,23 +97,7 @@ fun FeedModeScreen(
                     selected = state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT,
                     onClick = { onEvent(FeedModeEvent.KindChanged(fefu.prime.srastem.feed.domain.FeedKind.EVENT)) })
             }
-            if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) SrDateField(
-                value = state.localDate.asSrDate(),
-                onSelect = { date ->
-                    onEvent(
-                        FeedModeEvent.DateChanged(
-                            "${
-                                date.year.toString().padStart(4, '0')
-                            }-${date.month.toString().padStart(2, '0')}-${
-                                date.day.toString().padStart(2, '0')
-                            }"
-                        )
-                    )
-                },
-                label = "Дата события",
-                errorMessage = if (state.fieldError?.contains("дату") == true) state.fieldError else null,
-            )
-            Text("Категории", style = SrType.Title, color = SrColors.Text)
+            Text("Категории", style = SrType.Label, color = SrColors.Muted)
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -136,18 +121,20 @@ fun FeedModeScreen(
                 placeholder = "Необязательно",
                 errorMessage = state.fieldError
             )
-            SrField(
-                state.partySizeText,
-                { onEvent(FeedModeEvent.PartySizeChanged(it)) },
-                "Человек",
-                kind = SrFieldKind.Number,
-                placeholder = "2",
-                errorMessage = if (state.fieldError?.contains("человек") == true) state.fieldError else null
+            if (state.kind == fefu.prime.srastem.feed.domain.FeedKind.EVENT) SrDateField(
+                value = state.localDate.asSrDate(),
+                onSelect = { date ->
+                    onEvent(FeedModeEvent.DateChanged(
+                        "${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}"
+                    ))
+                },
+                label = "Дата события",
+                errorMessage = if (state.fieldError?.contains("дату") == true) state.fieldError else null,
             )
             state.feedError?.let { Text(it, style = SrType.Body, color = SrColors.Error) }
             if (state.busy) CircularProgressIndicator(color = SrColors.Primary)
             SrButton(
-                "Показать подборку",
+                "Начать выбор",
                 { onEvent(FeedModeEvent.SubmitFilters) },
                 enabled = !state.busy,
                 loading = state.busy
@@ -337,12 +324,12 @@ fun FeedModeScreen(
             .fillMaxSize()
             .background(FeedDesign.ScreenGradient)
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        SrTopBar(title = "Выбираем вместе")
+        SrTopBar(title = "Лента")
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text("Выбираем вместе", style = SrType.Display, color = SrColors.Text)
