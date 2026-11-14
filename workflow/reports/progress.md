@@ -33,3 +33,10 @@
 | FE-F06 | FE-F03, FE-F05 | BLOCKED | Ожидает FE-F03 и FE-F05. |
 
 Источник порядка и зависимостей — [спецификация ленты](../../docs/specs/feed-v1/README.md). Спеки пакетов — `workflow/specs/feed-v1/`. Для запуска этой очереди переключить `spec_dir` в config.json на `workflow/specs/feed-v1`.
+
+# Поэкранный UI-прогон · swipe-ui
+
+| Экран | Зависимость | Статус | Ветка / worktree | Отчёт |
+|---|---|---|---|---|
+| 01 Открытия | — | INTEGRATED; final TESTING | `codex/ui-01-discovery` → `codex/ui-swipe-integration` | Пользователь подтвердил, что первая страница выглядит нормально; прежний staging-блокер и отчёты сохранены. Общий финальный прогон ещё нужен. |
+| 02–17 | Порядок из `docs/specs/swipe-ui/README.md` | TODO | отдельная ветка на экран | Один PM, до двух Developer параллельно; затем интеграция и поэкранная проверка Tester. |
